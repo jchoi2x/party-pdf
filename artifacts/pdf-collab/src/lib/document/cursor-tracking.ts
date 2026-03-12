@@ -27,7 +27,9 @@ export function setupCursorTracking(
     if (!provider) return;
 
     try {
-      const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
+      const displayMode = documentViewer
+        .getDisplayModeManager()
+        .getDisplayMode();
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect();
       const iframeEl = instance.UI.iframeWindow.frameElement as HTMLElement;
@@ -38,23 +40,27 @@ export function setupCursorTracking(
 
       const windowPoint = new instance.Core.Math.Point(
         iframeRelativeX - scrollRect.left + scrollElement.scrollLeft,
-        iframeRelativeY - scrollRect.top + scrollElement.scrollTop
+        iframeRelativeY - scrollRect.top + scrollElement.scrollTop,
       );
 
       const selected = displayMode.getSelectedPages(windowPoint, windowPoint);
       const page = selected?.first || selected?.last || null;
       if (!page) {
+        console.log("no page");
         broadcastCursor(null);
         return;
       }
 
       const pagePoint = displayMode.windowToPage(windowPoint, page);
-      broadcastCursor({
+      const cursor = {
         pageNumber: page,
         x: pagePoint.x,
         y: pagePoint.y,
-      });
-    } catch {
+      };
+      console.log("cursor", cursor);
+      broadcastCursor(cursor);
+    } catch (err) {
+      console.log("error", err);
       // ignore coordinate conversion errors
     }
   }
@@ -92,7 +98,9 @@ export function setupCursorTracking(
 
 export function updateCursorOverlay(
   overlayRef: RefObject<HTMLDivElement | null>,
-  viewerInstanceRef: MutableRefObject<Awaited<ReturnType<typeof WebViewer>> | null>,
+  viewerInstanceRef: MutableRefObject<Awaited<
+    ReturnType<typeof WebViewer>
+  > | null>,
   viewerRef: RefObject<HTMLDivElement | null>,
   collaboratorsRef: MutableRefObject<Collaborator[]>,
 ) {
@@ -109,9 +117,17 @@ export function updateCursorOverlay(
     if (!collab.cursor) continue;
 
     try {
-      const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
-      const pagePoint = new instance.Core.Math.Point(collab.cursor.x, collab.cursor.y);
-      const windowPoint = displayMode.pageToWindow(pagePoint, collab.cursor.pageNumber);
+      const displayMode = documentViewer
+        .getDisplayModeManager()
+        .getDisplayMode();
+      const pagePoint = new instance.Core.Math.Point(
+        collab.cursor.x,
+        collab.cursor.y,
+      );
+      const windowPoint = displayMode.pageToWindow(
+        pagePoint,
+        collab.cursor.pageNumber,
+      );
 
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect();
@@ -121,10 +137,26 @@ export function updateCursorOverlay(
       if (!viewerContainer) continue;
       const containerRect = viewerContainer.getBoundingClientRect();
 
-      const screenX = windowPoint.x - scrollElement.scrollLeft + scrollRect.left + iframeRect.left - containerRect.left;
-      const screenY = windowPoint.y - scrollElement.scrollTop + scrollRect.top + iframeRect.top - containerRect.top;
+      const screenX =
+        windowPoint.x -
+        scrollElement.scrollLeft +
+        scrollRect.left +
+        iframeRect.left -
+        containerRect.left;
+      const screenY =
+        windowPoint.y -
+        scrollElement.scrollTop +
+        scrollRect.top +
+        iframeRect.top -
+        containerRect.top;
 
-      if (screenX < 0 || screenY < 0 || screenX > containerRect.width || screenY > containerRect.height) continue;
+      if (
+        screenX < 0 ||
+        screenY < 0 ||
+        screenX > containerRect.width ||
+        screenY > containerRect.height
+      )
+        continue;
 
       const safeColor = sanitizeColor(collab.color);
 
