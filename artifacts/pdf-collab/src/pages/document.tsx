@@ -8,6 +8,7 @@ import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName, getUserColor, getInitials } from "@/lib/username";
 import { useTheme } from "@/lib/theme";
 import { useWebRTC } from "@/hooks/use-webrtc";
+import { getStoredDevicePreferences } from "@/hooks/use-media-devices";
 import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import VideoPanel from "@/components/logical-units/VideoPanel";
@@ -50,8 +51,16 @@ export default function DocumentPage() {
   const [signalConnected, setSignalConnected] = useState(false);
   const [mobileVideoOpen, setMobileVideoOpen] = useState(false);
   const isMobile = useIsMobile();
+  const [audioOutputId, setAudioOutputId] = useState(() => getStoredDevicePreferences().audioOutput || "");
 
-  const { localStream, remoteStreams, startCamera, stopCamera, localPeerId } = useWebRTC(id, signalConnected);
+  const { localStream, remoteStreams, startCamera, stopCamera, replaceLocalStream, localPeerId } = useWebRTC(id, signalConnected);
+
+  const handleReplaceStream = useCallback(async (newStream: MediaStream, outputId: string) => {
+    setSignalConnected(true);
+    await replaceLocalStream(newStream);
+    setCameraOn(true);
+    setAudioOutputId(outputId);
+  }, [replaceLocalStream]);
 
   const handleToggleCamera = useCallback(async () => {
     if (cameraOn) {
@@ -59,7 +68,11 @@ export default function DocumentPage() {
       setCameraOn(false);
     } else {
       setSignalConnected(true);
-      const success = await startCamera();
+      const prefs = getStoredDevicePreferences();
+      const success = await startCamera({
+        videoDeviceId: prefs.videoInput,
+        audioDeviceId: prefs.audioInput,
+      });
       if (success) {
         setCameraOn(true);
       } else {
@@ -385,6 +398,8 @@ export default function DocumentPage() {
             onToggleCollapse={() => setVideoPanelCollapsed((v) => !v)}
             collaborators={collaborators}
             localUser={{ name: userName || "You", color: getUserColor() }}
+            onReplaceStream={handleReplaceStream}
+            audioOutputId={audioOutputId}
           />
         )}
         <div className="flex-1 relative overflow-hidden">
@@ -406,6 +421,8 @@ export default function DocumentPage() {
           onMobileClose={() => setMobileVideoOpen(false)}
           collaborators={collaborators}
           localUser={{ name: userName || "You", color: getUserColor() }}
+          onReplaceStream={handleReplaceStream}
+          audioOutputId={audioOutputId}
         />
       )}
     </div>

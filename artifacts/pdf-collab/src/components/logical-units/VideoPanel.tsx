@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
-import { VideoCamera, VideoCameraSlash, CaretLeft, CaretRight, X } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { VideoCamera, VideoCameraSlash, CaretLeft, CaretRight, GearSix, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/username";
 import type { Collaborator } from "@/pages/document";
+import DeviceSettingsDialog from "./DeviceSettingsDialog";
 
 interface VideoPanelProps {
   localStream: MediaStream | null;
@@ -16,9 +17,11 @@ interface VideoPanelProps {
   onMobileClose?: () => void;
   collaborators: Collaborator[];
   localUser: { name: string; color: string };
+  onReplaceStream: (stream: MediaStream, audioOutputId: string) => void;
+  audioOutputId?: string;
 }
 
-function VideoTile({ stream, label, muted }: { stream: MediaStream; label: string; muted?: boolean }) {
+function VideoTile({ stream, label, muted, audioOutputId }: { stream: MediaStream; label: string; muted?: boolean; audioOutputId?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -26,6 +29,14 @@ function VideoTile({ stream, label, muted }: { stream: MediaStream; label: strin
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  useEffect(() => {
+    if (!videoRef.current || !audioOutputId || muted) return;
+    const el = videoRef.current as any;
+    if (typeof el.setSinkId === "function") {
+      el.setSinkId(audioOutputId).catch(() => {});
+    }
+  }, [audioOutputId, muted]);
 
   return (
     <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
@@ -64,7 +75,8 @@ function VideoPanelContent({
   remoteStreams,
   collaborators,
   localUser,
-}: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "collaborators" | "localUser">) {
+  audioOutputId,
+}: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "collaborators" | "localUser" | "audioOutputId">) {
   return (
     <div className="flex-1 overflow-y-auto p-2 space-y-2">
       {localStream ? (
@@ -76,7 +88,7 @@ function VideoPanelContent({
       {collaborators.map((collab) => {
         const stream = collab.peerId ? remoteStreams.get(collab.peerId) : undefined;
         return stream ? (
-          <VideoTile key={collab.peerId || collab.name} stream={stream} label={collab.name} />
+          <VideoTile key={collab.peerId || collab.name} stream={stream} label={collab.name} audioOutputId={audioOutputId} />
         ) : (
           <PlaceholderCard key={collab.peerId || collab.name} name={collab.name} color={collab.color} />
         );
@@ -90,7 +102,7 @@ function VideoPanelContent({
           ([peerId]) => !matchedPeerIds.has(peerId)
         );
         return unmatchedEntries.map(([peerId, stream]) => (
-          <VideoTile key={peerId} stream={stream} label={peerId.split("-").slice(0, 2).join("-")} />
+          <VideoTile key={peerId} stream={stream} label={peerId.split("-").slice(0, 2).join("-")} audioOutputId={audioOutputId} />
         ));
       })()}
     </div>
@@ -109,6 +121,8 @@ export default function VideoPanel({
   onMobileClose,
   collaborators,
   localUser,
+  onReplaceStream,
+  audioOutputId,
 }: VideoPanelProps) {
   if (isMobile) {
     return (
@@ -167,6 +181,7 @@ export default function VideoPanel({
               remoteStreams={remoteStreams}
               collaborators={collaborators}
               localUser={localUser}
+              audioOutputId={audioOutputId}
             />
           </div>
         </div>
@@ -174,30 +189,49 @@ export default function VideoPanel({
     );
   }
 
+  const hasStreams = localStream || remoteStreams.size > 0;
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   return (
     <div className="relative flex-shrink-0 flex">
+      <DeviceSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onSave={onReplaceStream}
+      />
       {!collapsed && (
         <div className="bg-card border-r flex flex-col w-64">
           <div className="p-3 border-b flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">Video</span>
-            <Button
-              variant={cameraOn ? "destructive" : "default"}
-              size="sm"
-              onClick={onToggleCamera}
-              className="h-7 text-xs gap-1"
-            >
-              {cameraOn ? (
-                <>
-                  <VideoCameraSlash size={14} />
-                  Off
-                </>
-              ) : (
-                <>
-                  <VideoCamera size={14} />
-                  Camera
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSettingsOpen(true)}
+                className="h-7 w-7"
+                title="Device settings"
+              >
+                <GearSix size={14} />
+              </Button>
+              <Button
+                variant={cameraOn ? "destructive" : "default"}
+                size="sm"
+                onClick={onToggleCamera}
+                className="h-7 text-xs gap-1"
+              >
+                {cameraOn ? (
+                  <>
+                    <VideoCameraSlash size={14} />
+                    Off
+                  </>
+                ) : (
+                  <>
+                    <VideoCamera size={14} />
+                    Camera
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           <VideoPanelContent
@@ -205,6 +239,7 @@ export default function VideoPanel({
             remoteStreams={remoteStreams}
             collaborators={collaborators}
             localUser={localUser}
+            audioOutputId={audioOutputId}
           />
         </div>
       )}

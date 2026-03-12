@@ -73,7 +73,12 @@ artifacts-monorepo/
 ## Key Files
 
 - `artifacts/pdf-collab/src/pages/home.tsx` — Upload form, ULID generation, IndexedDB save
-- `artifacts/pdf-collab/src/pages/document.tsx` — Apryse WebViewer init, Y.js provider setup
+- `artifacts/pdf-collab/src/pages/document.tsx` — Apryse WebViewer init, Y.js provider setup, device settings integration
+- `artifacts/pdf-collab/src/hooks/use-media-devices.ts` — Device enumeration hook + localStorage device preferences
+- `artifacts/pdf-collab/src/hooks/use-webrtc.ts` — WebRTC hook with replaceLocalStream + device-aware startCamera
+- `artifacts/pdf-collab/src/components/logical-units/DeviceSettingsDialog.tsx` — Mic/speaker/camera settings dialog
+- `artifacts/pdf-collab/src/components/logical-units/MicLevelBar.tsx` — Real-time mic level indicator (Web Audio API)
+- `artifacts/pdf-collab/src/components/logical-units/VideoPanel.tsx` — Video panel with gear icon for device settings
 - `artifacts/pdf-collab/src/lib/indexeddb.ts` — IndexedDB wrapper (saveDocument, getDocument, etc.)
 - `artifacts/pdf-collab/src/lib/username.ts` — localStorage username helpers
 - `artifacts/pdf-collab/src/components/NameDialog.tsx` — Required name prompt (non-dismissable)

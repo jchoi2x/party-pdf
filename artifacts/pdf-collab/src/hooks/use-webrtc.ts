@@ -89,9 +89,13 @@ export function useWebRTC(roomId: string | undefined, enabled: boolean) {
     return pc;
   }, [updateRemoteStreams, removePeer]);
 
-  const startCamera = useCallback(async (): Promise<boolean> => {
+  const startCamera = useCallback(async (deviceIds?: { videoDeviceId?: string; audioDeviceId?: string }): Promise<boolean> => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const constraints: MediaStreamConstraints = {
+        video: deviceIds?.videoDeviceId ? { deviceId: { exact: deviceIds.videoDeviceId } } : true,
+        audio: deviceIds?.audioDeviceId ? { deviceId: { exact: deviceIds.audioDeviceId } } : true,
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
       setLocalStream(stream);
 
@@ -110,6 +114,28 @@ export function useWebRTC(roomId: string | undefined, enabled: boolean) {
     } catch (err) {
       console.warn("[webrtc] Failed to get camera:", err);
       return false;
+    }
+  }, []);
+
+  const replaceLocalStream = useCallback(async (newStream: MediaStream) => {
+    if (localStreamRef.current) {
+      for (const track of localStreamRef.current.getTracks()) {
+        track.stop();
+      }
+    }
+    localStreamRef.current = newStream;
+    setLocalStream(newStream);
+
+    for (const [, peer] of peersRef.current) {
+      const senders = peer.pc.getSenders();
+      for (const track of newStream.getTracks()) {
+        const existing = senders.find((s) => s.track?.kind === track.kind);
+        if (existing) {
+          await existing.replaceTrack(track);
+        } else {
+          peer.pc.addTrack(track, newStream);
+        }
+      }
     }
   }, []);
 
@@ -222,5 +248,5 @@ export function useWebRTC(roomId: string | undefined, enabled: boolean) {
     };
   }, [roomId, enabled, createPeerConnection, removePeer]);
 
-  return { localStream, remoteStreams, startCamera, stopCamera, localPeerId };
+  return { localStream, remoteStreams, startCamera, stopCamera, replaceLocalStream, localPeerId };
 }
