@@ -18,6 +18,7 @@ export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 export interface Collaborator {
   name: string;
   color: string;
+  peerId?: string;
 }
 
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
@@ -50,7 +51,7 @@ export default function DocumentPage() {
   const [mobileVideoOpen, setMobileVideoOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const { localStream, remoteStreams, startCamera, stopCamera } = useWebRTC(id, signalConnected);
+  const { localStream, remoteStreams, startCamera, stopCamera, localPeerId } = useWebRTC(id, signalConnected);
 
   const handleToggleCamera = useCallback(async () => {
     if (cameraOn) {
@@ -251,8 +252,10 @@ export default function DocumentPage() {
             typeof user.color === "string" && user.color
               ? user.color
               : "#90A4AE";
+          const peerId =
+            typeof user.peerId === "string" ? user.peerId : undefined;
           if (name) {
-            others.push({ name, color });
+            others.push({ name, color, peerId });
           }
         });
         setCollaborators(others);
@@ -301,6 +304,19 @@ export default function DocumentPage() {
   }
 
   useEffect(() => {
+    if (providerRef.current && localPeerId) {
+      const currentState = providerRef.current.awareness.getLocalState();
+      const user = currentState?.user as Record<string, unknown> | undefined;
+      if (user) {
+        providerRef.current.awareness.setLocalStateField("user", {
+          ...user,
+          peerId: localPeerId,
+        });
+      }
+    }
+  }, [localPeerId]);
+
+  useEffect(() => {
     const instance = viewerInstanceRef.current;
     if (instance) {
       instance.UI.setTheme(
@@ -316,7 +332,9 @@ export default function DocumentPage() {
       viewerInstanceRef.current.Core.annotationManager.setCurrentUser(name);
     }
     if (providerRef.current) {
+      const existing = providerRef.current.awareness.getLocalState()?.user as Record<string, unknown> | undefined;
       providerRef.current.awareness.setLocalStateField("user", {
+        ...existing,
         name,
         color: getUserColor(),
       });
@@ -329,7 +347,9 @@ export default function DocumentPage() {
       viewerInstanceRef.current.Core.annotationManager.setCurrentUser(name);
     }
     if (providerRef.current) {
+      const existing = providerRef.current.awareness.getLocalState()?.user as Record<string, unknown> | undefined;
       providerRef.current.awareness.setLocalStateField("user", {
+        ...existing,
         name,
         color: getUserColor(),
       });
@@ -363,6 +383,8 @@ export default function DocumentPage() {
             onToggleCamera={handleToggleCamera}
             collapsed={videoPanelCollapsed}
             onToggleCollapse={() => setVideoPanelCollapsed((v) => !v)}
+            collaborators={collaborators}
+            localUser={{ name: userName || "You", color: getUserColor() }}
           />
         )}
         <div className="flex-1 relative overflow-hidden">
@@ -382,6 +404,8 @@ export default function DocumentPage() {
           isMobile
           mobileOpen={mobileVideoOpen}
           onMobileClose={() => setMobileVideoOpen(false)}
+          collaborators={collaborators}
+          localUser={{ name: userName || "You", color: getUserColor() }}
         />
       )}
     </div>

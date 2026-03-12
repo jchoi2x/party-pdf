@@ -12,6 +12,7 @@ const PARTY_HOST = "oblockparty.xvzf.workers.dev";
 export function useWebRTC(roomId: string | undefined, enabled: boolean) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
+  const [localPeerId, setLocalPeerId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const peersRef = useRef<Map<string, PeerConnection>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -137,6 +138,7 @@ export function useWebRTC(roomId: string | undefined, enabled: boolean) {
         switch (msg.type) {
           case "peer-id":
             myPeerIdRef.current = msg.peerId;
+            setLocalPeerId(msg.peerId);
             break;
 
           case "peer-list":
@@ -220,5 +222,5 @@ export function useWebRTC(roomId: string | undefined, enabled: boolean) {
     };
   }, [roomId, enabled, createPeerConnection, removePeer]);
 
-  return { localStream, remoteStreams, startCamera, stopCamera };
+  return { localStream, remoteStreams, startCamera, stopCamera, localPeerId };
 }

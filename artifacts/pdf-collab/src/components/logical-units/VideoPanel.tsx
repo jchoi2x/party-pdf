@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { VideoCamera, VideoCameraSlash, CaretLeft, CaretRight, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { getInitials } from "@/lib/username";
+import type { Collaborator } from "@/pages/document";
 
 interface VideoPanelProps {
   localStream: MediaStream | null;
@@ -12,6 +14,8 @@ interface VideoPanelProps {
   isMobile?: boolean;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collaborators: Collaborator[];
+  localUser: { name: string; color: string };
 }
 
 function VideoTile({ stream, label, muted }: { stream: MediaStream; label: string; muted?: boolean }) {
@@ -39,27 +43,56 @@ function VideoTile({ stream, label, muted }: { stream: MediaStream; label: strin
   );
 }
 
+function PlaceholderCard({ name, color }: { name: string; color: string }) {
+  return (
+    <div className="relative rounded-lg overflow-hidden bg-muted aspect-video flex flex-col items-center justify-center gap-1.5">
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+        style={{ backgroundColor: color }}
+      >
+        {getInitials(name)}
+      </div>
+      <span className="text-xs text-muted-foreground truncate max-w-[90%]">
+        {name}
+      </span>
+    </div>
+  );
+}
+
 function VideoPanelContent({
   localStream,
   remoteStreams,
-  cameraOn,
-  onToggleCamera,
-}: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "cameraOn" | "onToggleCamera">) {
-  const hasStreams = localStream || remoteStreams.size > 0;
-
+  collaborators,
+  localUser,
+}: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "collaborators" | "localUser">) {
   return (
     <div className="flex-1 overflow-y-auto p-2 space-y-2">
-      {localStream && (
+      {localStream ? (
         <VideoTile stream={localStream} label="You" muted />
+      ) : (
+        <PlaceholderCard name={localUser.name} color={localUser.color} />
       )}
-      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-        <VideoTile key={peerId} stream={stream} label={peerId.split("-").slice(0, 2).join("-")} />
-      ))}
-      {!hasStreams && (
-        <div className="flex items-center justify-center h-32 text-muted-foreground text-xs text-center px-4">
-          Turn on your camera to start video sharing
-        </div>
-      )}
+
+      {collaborators.map((collab) => {
+        const stream = collab.peerId ? remoteStreams.get(collab.peerId) : undefined;
+        return stream ? (
+          <VideoTile key={collab.peerId || collab.name} stream={stream} label={collab.name} />
+        ) : (
+          <PlaceholderCard key={collab.peerId || collab.name} name={collab.name} color={collab.color} />
+        );
+      })}
+
+      {remoteStreams.size > 0 && (() => {
+        const matchedPeerIds = new Set(
+          collaborators.map((c) => c.peerId).filter(Boolean)
+        );
+        const unmatchedEntries = Array.from(remoteStreams.entries()).filter(
+          ([peerId]) => !matchedPeerIds.has(peerId)
+        );
+        return unmatchedEntries.map(([peerId, stream]) => (
+          <VideoTile key={peerId} stream={stream} label={peerId.split("-").slice(0, 2).join("-")} />
+        ));
+      })()}
     </div>
   );
 }
@@ -74,6 +107,8 @@ export default function VideoPanel({
   isMobile,
   mobileOpen,
   onMobileClose,
+  collaborators,
+  localUser,
 }: VideoPanelProps) {
   if (isMobile) {
     return (
@@ -130,16 +165,14 @@ export default function VideoPanel({
             <VideoPanelContent
               localStream={localStream}
               remoteStreams={remoteStreams}
-              cameraOn={cameraOn}
-              onToggleCamera={onToggleCamera}
+              collaborators={collaborators}
+              localUser={localUser}
             />
           </div>
         </div>
       </>
     );
   }
-
-  const hasStreams = localStream || remoteStreams.size > 0;
 
   return (
     <div className="relative flex-shrink-0 flex">
@@ -167,19 +200,12 @@ export default function VideoPanel({
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2 space-y-2">
-            {localStream && (
-              <VideoTile stream={localStream} label="You" muted />
-            )}
-            {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-              <VideoTile key={peerId} stream={stream} label={peerId.split("-").slice(0, 2).join("-")} />
-            ))}
-            {!hasStreams && (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-xs text-center px-4">
-                Turn on your camera to start video sharing
-              </div>
-            )}
-          </div>
+          <VideoPanelContent
+            localStream={localStream}
+            remoteStreams={remoteStreams}
+            collaborators={collaborators}
+            localUser={localUser}
+          />
         </div>
       )}
 
