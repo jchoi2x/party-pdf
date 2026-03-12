@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { ulid } from "ulid";
 import { toast } from "sonner";
-import { FilePdf, Upload } from "@phosphor-icons/react";
+import { FilePdf, Upload, Sun, Moon } from "@phosphor-icons/react";
 import {
   Card,
   CardContent,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { saveDocument } from "@/lib/indexeddb";
 import { formatFileSize } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
 
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
 
@@ -56,6 +57,7 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isDark, toggleTheme } = useTheme();
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -124,7 +126,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-8">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-8 relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 h-9 w-9"
+        title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {isDark ? <Sun size={18} weight="bold" /> : <Moon size={18} weight="bold" />}
+      </Button>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">

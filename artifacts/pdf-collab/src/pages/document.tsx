@@ -6,6 +6,7 @@ import YProvider from "y-partyserver/provider";
 import * as Y from "yjs";
 import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName } from "@/lib/username";
+import { useTheme } from "@/lib/theme";
 import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -23,6 +24,7 @@ export default function DocumentPage() {
   const [userName, setUserName] = useState<string | null>(getStoredUserName());
   const [showNameDialog, setShowNameDialog] = useState(!getStoredUserName());
   const [isLoading, setIsLoading] = useState(true);
+  const { isDark, toggleTheme } = useTheme();
   const viewerInstanceRef = useRef<Awaited<ReturnType<typeof WebViewer>> | null>(null);
   const viewerInitialized = useRef(false);
   const providerRef = useRef<InstanceType<typeof YProvider> | null>(null);
@@ -83,6 +85,8 @@ export default function DocumentPage() {
         );
 
         viewerInstanceRef.current = instance;
+
+        instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
 
         const { documentViewer, annotationManager } = instance.Core;
 
@@ -202,6 +206,13 @@ export default function DocumentPage() {
     }
   }
 
+  useEffect(() => {
+    const instance = viewerInstanceRef.current;
+    if (instance) {
+      instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
+    }
+  }, [isDark]);
+
   function handleNameSave(name: string) {
     setUserName(name);
     setShowNameDialog(false);
@@ -226,6 +237,8 @@ export default function DocumentPage() {
           documentName={docName || "Loading..."}
           userName={userName || ""}
           onUserNameChange={handleUserNameChange}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
         />
       )}
 

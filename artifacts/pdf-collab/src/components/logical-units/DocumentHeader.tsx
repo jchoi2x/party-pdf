@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { House, PencilSimple } from "@phosphor-icons/react";
+import { House, PencilSimple, Sun, Moon } from "@phosphor-icons/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,11 @@ interface DocumentHeaderProps {
   documentName: string;
   userName: string;
   onUserNameChange: (name: string) => void;
+  isDark: boolean;
+  onToggleTheme: () => void;
 }
 
-export default function DocumentHeader({ documentName, userName, onUserNameChange }: DocumentHeaderProps) {
+export default function DocumentHeader({ documentName, userName, onUserNameChange, isDark, onToggleTheme }: DocumentHeaderProps) {
   const [, navigate] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(userName);
@@ -78,6 +80,15 @@ export default function DocumentHeader({ documentName, userName, onUserNameChang
           </div>
         ) : (
           <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleTheme}
+              className="h-9 w-9"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun size={18} weight="bold" /> : <Moon size={18} weight="bold" />}
+            </Button>
             <div className="flex items-center gap-2">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
