@@ -18,6 +18,16 @@ export function setupCursorTracking(
   let lastBroadcast = 0;
   const THROTTLE_MS = 33;
 
+  function broadcastCursor(cursor: CursorPosition | null) {
+    const provider = providerRef.current;
+    if (!provider) return;
+    provider.awareness.setLocalStateField("cursor", cursor);
+  }
+
+  // e.clientX/Y from documentViewer events are in the iframe's coordinate
+  // space, same as scrollElement.getBoundingClientRect(). No iframeRect
+  // adjustment needed here — that only applies when converting back to
+  // outer-window screen coords in updateCursorOverlay.
   function handleMouseMove(e: { clientX: number; clientY: number }) {
     const now = Date.now();
     if (now - lastBroadcast < THROTTLE_MS) return;
@@ -27,41 +37,25 @@ export function setupCursorTracking(
     if (!provider) return;
 
     try {
-      const displayMode = documentViewer
-        .getDisplayModeManager()
-        .getDisplayMode();
+      const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect();
-      const iframeEl = document.querySelector('apryse-webviewer') as HTMLElement | null;
-      if (!iframeEl) return;
-      const iframeRect = iframeEl.getBoundingClientRect();
-
-      const iframeRelativeX = e.clientX - iframeRect.left;
-      const iframeRelativeY = e.clientY - iframeRect.top;
 
       const windowPoint = new instance.Core.Math.Point(
-        iframeRelativeX - scrollRect.left + scrollElement.scrollLeft,
-        iframeRelativeY - scrollRect.top + scrollElement.scrollTop,
+        e.clientX - scrollRect.left + scrollElement.scrollLeft,
+        e.clientY - scrollRect.top + scrollElement.scrollTop,
       );
 
       const selected = displayMode.getSelectedPages(windowPoint, windowPoint);
-      const page = selected?.first || selected?.last || null;
+      const page = selected?.first || selected?.last || documentViewer.getCurrentPage();
       if (!page) {
-        console.log("no page");
         broadcastCursor(null);
         return;
       }
 
       const pagePoint = displayMode.windowToPage(windowPoint, page);
-      const cursor = {
-        pageNumber: page,
-        x: pagePoint.x,
-        y: pagePoint.y,
-      };
-      console.log("cursor", cursor);
-      broadcastCursor(cursor);
-    } catch (err) {
-      console.log("error", err);
+      broadcastCursor({ pageNumber: page, x: pagePoint.x, y: pagePoint.y });
+    } catch {
       // ignore coordinate conversion errors
     }
   }
@@ -70,27 +64,24 @@ export function setupCursorTracking(
     broadcastCursor(null);
   }
 
-  function broadcastCursor(cursor: CursorPosition | null) {
-    const provider = providerRef.current;
-    if (!provider) return;
-    provider.awareness.setLocalStateField("cursor", cursor);
-  }
-
+  // Apryse documentViewer mouseMove fires inside the iframe
   documentViewer.addEventListener("mouseMove", handleMouseMove);
-  documentViewer.addEventListener("mouseLeave", handleMouseLeave);
+
+  // Use a native mouseleave on the outer web component element — the Apryse
+  // mouseLeave event isn't reliable for detecting when the cursor exits the viewer
+  const webviewerEl = document.querySelector("apryse-webviewer");
+  webviewerEl?.addEventListener("mouseleave", handleMouseLeave);
 
   const scrollElement = documentViewer.getScrollViewElement();
-
   function handleScrollOrZoom() {
     updateOverlayFn();
   }
-
   scrollElement.addEventListener("scroll", handleScrollOrZoom);
   documentViewer.addEventListener("zoomUpdated", handleScrollOrZoom);
 
   cursorCleanupRef.current = () => {
     documentViewer.removeEventListener("mouseMove", handleMouseMove);
-    documentViewer.removeEventListener("mouseLeave", handleMouseLeave);
+    webviewerEl?.removeEventListener("mouseleave", handleMouseLeave);
     scrollElement.removeEventListener("scroll", handleScrollOrZoom);
     documentViewer.removeEventListener("zoomUpdated", handleScrollOrZoom);
     broadcastCursor(null);
@@ -99,9 +90,7 @@ export function setupCursorTracking(
 
 export function updateCursorOverlay(
   overlayRef: RefObject<HTMLDivElement | null>,
-  viewerInstanceRef: MutableRefObject<Awaited<
-    ReturnType<typeof WebViewer>
-  > | null>,
+  viewerInstanceRef: MutableRefObject<Awaited<ReturnType<typeof WebViewer>> | null>,
   viewerRef: RefObject<HTMLDivElement | null>,
   collaboratorsRef: MutableRefObject<Collaborator[]>,
 ) {
@@ -118,47 +107,27 @@ export function updateCursorOverlay(
     if (!collab.cursor) continue;
 
     try {
-      const displayMode = documentViewer
-        .getDisplayModeManager()
-        .getDisplayMode();
-      const pagePoint = new instance.Core.Math.Point(
-        collab.cursor.x,
-        collab.cursor.y,
-      );
-      const windowPoint = displayMode.pageToWindow(
-        pagePoint,
-        collab.cursor.pageNumber,
-      );
+      const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
+      const pagePoint = new instance.Core.Math.Point(collab.cursor.x, collab.cursor.y);
+      const windowPoint = displayMode.pageToWindow(pagePoint, collab.cursor.pageNumber);
 
       const scrollElement = documentViewer.getScrollViewElement();
-      const scrollRect = scrollElement.getBoundingClientRect();
-      const iframeEl = document.querySelector('apryse-webviewer') as HTMLElement | null;
+      const scrollRect = scrollElement.getBoundingClientRect(); // iframe-relative
+      const iframeEl = document.querySelector("apryse-webviewer") as HTMLElement | null;
       if (!iframeEl) continue;
-      const iframeRect = iframeEl.getBoundingClientRect();
+      const iframeRect = iframeEl.getBoundingClientRect(); // outer-window-relative
       const viewerContainer = viewerRef.current;
       if (!viewerContainer) continue;
-      const containerRect = viewerContainer.getBoundingClientRect();
+      const containerRect = viewerContainer.getBoundingClientRect(); // outer-window-relative
 
-      const screenX =
-        windowPoint.x -
-        scrollElement.scrollLeft +
-        scrollRect.left +
-        iframeRect.left -
-        containerRect.left;
-      const screenY =
-        windowPoint.y -
-        scrollElement.scrollTop +
-        scrollRect.top +
-        iframeRect.top -
-        containerRect.top;
+      // windowPoint is in iframe content coords. Convert to outer-window screen coords:
+      //   + scrollRect.left  → iframe viewport position of scroll container
+      //   + iframeRect.left  → outer window position of the iframe itself
+      //   - containerRect.left → make relative to our overlay container
+      const screenX = windowPoint.x - scrollElement.scrollLeft + scrollRect.left + iframeRect.left - containerRect.left;
+      const screenY = windowPoint.y - scrollElement.scrollTop + scrollRect.top + iframeRect.top - containerRect.top;
 
-      if (
-        screenX < 0 ||
-        screenY < 0 ||
-        screenX > containerRect.width ||
-        screenY > containerRect.height
-      )
-        continue;
+      if (screenX < 0 || screenY < 0 || screenX > containerRect.width || screenY > containerRect.height) continue;
 
       const safeColor = sanitizeColor(collab.color);
 
