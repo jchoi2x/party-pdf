@@ -25,7 +25,9 @@ export interface Collaborator {
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
 
 function applyWebViewerTheme(instance: Awaited<ReturnType<typeof WebViewer>>, dark: boolean) {
-  const style = instance.UI.iframeWindow.document.documentElement.style;
+  const iframeWindow = instance.UI.iframeWindow;
+  if (!iframeWindow) return;
+  const style = iframeWindow.document.documentElement.style;
   if (dark) {
     // Base grays — mapped to our dark navy palette
     style.setProperty("--gray-1", "#0d1421");
@@ -178,7 +180,10 @@ export default function DocumentPage() {
         instance.UI.setTheme(
           isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT,
         );
-        applyWebViewerTheme(instance, isDark);
+
+        instance.UI.addEventListener("viewerLoaded", () => {
+          applyWebViewerTheme(instance, isDark);
+        });
 
         const { documentViewer, annotationManager } = instance.Core;
 
