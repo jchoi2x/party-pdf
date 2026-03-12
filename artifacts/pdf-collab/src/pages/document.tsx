@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { toast } from "sonner";
 import WebViewer from "@pdftron/webviewer";
 import YProvider from "y-partyserver/provider";
 import { getStoredUserName, getUserColor } from "@/lib/username";
 import { useTheme } from "@/lib/theme";
-import { useWebRTC } from "@/hooks/use-webrtc";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useWebViewer } from "@/hooks/use-webviewer";
 import { useCursorTracking } from "@/hooks/use-cursor-tracking";
-import { getStoredDevicePreferences } from "@/hooks/use-media-devices";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useVideoChat } from "@/hooks/use-video-chat";
 import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import VideoPanel from "@/components/logical-units/VideoPanel";
@@ -30,15 +28,8 @@ export default function DocumentPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [showConnectingModal, setShowConnectingModal] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [cameraOn, setCameraOn] = useState(false);
-  const [videoPanelCollapsed, setVideoPanelCollapsed] = useState(false);
-  const [signalConnected, setSignalConnected] = useState(false);
-  const [mobileVideoOpen, setMobileVideoOpen] = useState(false);
-  const [audioOutputId, setAudioOutputId] = useState(
-    () => getStoredDevicePreferences().audioOutput || "",
-  );
 
-  // Shared refs passed into both hooks to avoid circular dependencies
+  // Shared refs threaded through multiple hooks
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerInstanceRef = useRef<Awaited<ReturnType<typeof WebViewer>> | null>(null);
   const providerRef = useRef<InstanceType<typeof YProvider> | null>(null);
@@ -62,23 +53,16 @@ export default function DocumentPage() {
     navigate,
   });
 
-  const { localStream, remoteStreams, startCamera, stopCamera, replaceLocalStream, localPeerId } =
-    useWebRTC(id, signalConnected);
+  const { videoPanelCollapsed, setVideoPanelCollapsed, mobileVideoOpen, setMobileVideoOpen, videoPanelSharedProps } =
+    useVideoChat({
+      id: id!,
+      providerRef,
+      collaborators,
+      userName,
+    });
 
-  // Sync peerId into Yjs awareness so other users can associate WebRTC peer with collaborator
-  useEffect(() => {
-    if (providerRef.current && localPeerId) {
-      const user = providerRef.current.awareness.getLocalState()?.user as
-        | Record<string, unknown>
-        | undefined;
-      if (user) {
-        providerRef.current.awareness.setLocalStateField("user", { ...user, peerId: localPeerId });
-      }
-    }
-  }, [localPeerId]);
-
-  // Show "slow connection" modal only after a 4 s grace period so fast connects
-  // never flash it. Disconnections are rendered immediately in JSX.
+  // Show "slow connection" modal only after a 4 s grace period so fast
+  // connects never flash it. Disconnections are rendered immediately.
   useEffect(() => {
     if (isLoading || connectionStatus !== "connecting") {
       setShowConnectingModal(false);
@@ -87,32 +71,6 @@ export default function DocumentPage() {
     const timer = setTimeout(() => setShowConnectingModal(true), 4000);
     return () => clearTimeout(timer);
   }, [isLoading, connectionStatus]);
-
-  async function handleToggleCamera() {
-    if (cameraOn) {
-      stopCamera();
-      setCameraOn(false);
-    } else {
-      setSignalConnected(true);
-      const prefs = getStoredDevicePreferences();
-      const success = await startCamera({
-        videoDeviceId: prefs.videoInput,
-        audioDeviceId: prefs.audioInput,
-      });
-      if (success) {
-        setCameraOn(true);
-      } else {
-        toast.error("Could not access camera. Check permissions and try again.");
-      }
-    }
-  }
-
-  async function handleReplaceStream(newStream: MediaStream, outputId: string) {
-    setSignalConnected(true);
-    await replaceLocalStream(newStream);
-    setCameraOn(true);
-    setAudioOutputId(outputId);
-  }
 
   function updateAwareness(name: string) {
     if (providerRef.current) {
@@ -141,18 +99,6 @@ export default function DocumentPage() {
     updateAwareness(name);
   }
 
-  const videoPanelProps = {
-    localStream,
-    remoteStreams,
-    cameraOn,
-    onToggleCamera: handleToggleCamera,
-    collaborators,
-    localUser: { name: userName || "You", color: getUserColor() },
-    onReplaceStream: handleReplaceStream,
-    audioOutputId,
-    connectionStatus,
-  };
-
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <NameDialog open={showNameDialog} onSave={handleNameSave} />
@@ -173,7 +119,8 @@ export default function DocumentPage() {
       <div className="flex-1 flex overflow-hidden">
         {!isMobile && (
           <VideoPanel
-            {...videoPanelProps}
+            {...videoPanelSharedProps}
+            connectionStatus={connectionStatus}
             collapsed={videoPanelCollapsed}
             onToggleCollapse={() => setVideoPanelCollapsed((v) => !v)}
           />
@@ -192,7 +139,8 @@ export default function DocumentPage() {
 
       {isMobile && (
         <VideoPanel
-          {...videoPanelProps}
+          {...videoPanelSharedProps}
+          connectionStatus={connectionStatus}
           collapsed={false}
           onToggleCollapse={() => {}}
           isMobile
