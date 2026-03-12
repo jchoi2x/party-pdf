@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { setStoredUserName, getInitials } from "@/lib/username";
-import type { ConnectionStatus, Collaborator } from "@/pages/document";
+import type { Collaborator } from "@/pages/document";
 
 interface DocumentHeaderProps {
   documentName: string;
@@ -16,17 +16,10 @@ interface DocumentHeaderProps {
   onUserNameChange: (name: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
-  connectionStatus: ConnectionStatus;
   collaborators: Collaborator[];
   isMobile?: boolean;
   onMobileVideoToggle?: () => void;
 }
-
-const STATUS_CONFIG: Record<ConnectionStatus, { color: string; label: string; pulse: boolean }> = {
-  connecting: { color: "bg-yellow-400", label: "Connecting...", pulse: true },
-  connected: { color: "bg-green-500", label: "Connected", pulse: false },
-  disconnected: { color: "bg-red-500", label: "Disconnected", pulse: false },
-};
 
 const MAX_VISIBLE_AVATARS = 4;
 
@@ -36,7 +29,6 @@ export default function DocumentHeader({
   onUserNameChange,
   isDark,
   onToggleTheme,
-  connectionStatus,
   collaborators,
   isMobile,
   onMobileVideoToggle,
@@ -45,7 +37,6 @@ export default function DocumentHeader({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(userName);
 
-  const statusCfg = STATUS_CONFIG[connectionStatus];
   const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_AVATARS);
   const overflowCount = collaborators.length - MAX_VISIBLE_AVATARS;
 
@@ -72,7 +63,7 @@ export default function DocumentHeader({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b bg-card shadow-sm">
+      <header className="flex items-center justify-between px-4 sm:px-6 py-2 border-b bg-card shadow-sm">
         <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
@@ -85,23 +76,12 @@ export default function DocumentHeader({
           </Button>
           <div className="flex items-center gap-2 min-w-0">
             <h1
-              className="text-xl sm:text-2xl font-semibold text-foreground truncate"
+              className="text-base sm:text-lg font-semibold text-foreground truncate"
               style={{ fontFamily: "Space Grotesk, sans-serif" }}
               title={documentName}
             >
               {documentName}
             </h1>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={`inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${statusCfg.color} ${statusCfg.pulse ? "animate-pulse" : ""}`}
-                  aria-label={statusCfg.label}
-                />
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{statusCfg.label}</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
 

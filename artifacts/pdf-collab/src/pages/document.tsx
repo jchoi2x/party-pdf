@@ -423,7 +423,6 @@ export default function DocumentPage() {
           onUserNameChange={handleUserNameChange}
           isDark={isDark}
           onToggleTheme={toggleTheme}
-          connectionStatus={connectionStatus}
           collaborators={collaborators}
           isMobile={isMobile}
           onMobileVideoToggle={() => setMobileVideoOpen(true)}
@@ -443,6 +442,7 @@ export default function DocumentPage() {
             localUser={{ name: userName || "You", color: getUserColor() }}
             onReplaceStream={handleReplaceStream}
             audioOutputId={audioOutputId}
+            connectionStatus={connectionStatus}
           />
         )}
         <div className="flex-1 relative overflow-hidden">
@@ -466,6 +466,7 @@ export default function DocumentPage() {
           localUser={{ name: userName || "You", color: getUserColor() }}
           onReplaceStream={handleReplaceStream}
           audioOutputId={audioOutputId}
+          connectionStatus={connectionStatus}
         />
       )}
     </div>

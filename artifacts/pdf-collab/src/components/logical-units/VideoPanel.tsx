@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { VideoCamera, VideoCameraSlash, CaretLeft, CaretRight, GearSix, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/username";
-import type { Collaborator } from "@/pages/document";
+import type { ConnectionStatus, Collaborator } from "@/pages/document";
 import DeviceSettingsDialog from "./DeviceSettingsDialog";
+
+const STATUS_CONFIG: Record<ConnectionStatus, { color: string; label: string; pulse: boolean }> = {
+  connecting: { color: "bg-yellow-400", label: "Connecting...", pulse: true },
+  connected: { color: "bg-green-500", label: "Connected", pulse: false },
+  disconnected: { color: "bg-red-500", label: "Disconnected", pulse: false },
+};
 
 interface VideoPanelProps {
   localStream: MediaStream | null;
@@ -19,6 +26,7 @@ interface VideoPanelProps {
   localUser: { name: string; color: string };
   onReplaceStream: (stream: MediaStream, audioOutputId: string) => void;
   audioOutputId?: string;
+  connectionStatus: ConnectionStatus;
 }
 
 function VideoTile({ stream, label, muted, audioOutputId }: { stream: MediaStream; label: string; muted?: boolean; audioOutputId?: string }) {
@@ -70,20 +78,43 @@ function PlaceholderCard({ name, color }: { name: string; color: string }) {
   );
 }
 
+function ConnectionDot({ connectionStatus }: { connectionStatus: ConnectionStatus }) {
+  const cfg = STATUS_CONFIG[connectionStatus];
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={`absolute top-2 left-2 z-10 h-2.5 w-2.5 rounded-full ${cfg.color} ${cfg.pulse ? "animate-pulse" : ""} ring-1 ring-black/20`}
+            aria-label={cfg.label}
+          />
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <p>{cfg.label}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 function VideoPanelContent({
   localStream,
   remoteStreams,
   collaborators,
   localUser,
   audioOutputId,
-}: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "collaborators" | "localUser" | "audioOutputId">) {
+  connectionStatus,
+}: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "collaborators" | "localUser" | "audioOutputId" | "connectionStatus">) {
   return (
     <div className="flex-1 overflow-y-auto p-2 space-y-2">
-      {localStream ? (
-        <VideoTile stream={localStream} label="You" muted />
-      ) : (
-        <PlaceholderCard name={localUser.name} color={localUser.color} />
-      )}
+      <div className="relative">
+        <ConnectionDot connectionStatus={connectionStatus} />
+        {localStream ? (
+          <VideoTile stream={localStream} label="You" muted />
+        ) : (
+          <PlaceholderCard name={localUser.name} color={localUser.color} />
+        )}
+      </div>
 
       {collaborators.map((collab) => {
         const stream = collab.peerId ? remoteStreams.get(collab.peerId) : undefined;
@@ -123,6 +154,7 @@ export default function VideoPanel({
   localUser,
   onReplaceStream,
   audioOutputId,
+  connectionStatus,
 }: VideoPanelProps) {
   if (isMobile) {
     return (
@@ -182,6 +214,7 @@ export default function VideoPanel({
               collaborators={collaborators}
               localUser={localUser}
               audioOutputId={audioOutputId}
+              connectionStatus={connectionStatus}
             />
           </div>
         </div>
@@ -240,6 +273,7 @@ export default function VideoPanel({
             collaborators={collaborators}
             localUser={localUser}
             audioOutputId={audioOutputId}
+            connectionStatus={connectionStatus}
           />
         </div>
       )}
