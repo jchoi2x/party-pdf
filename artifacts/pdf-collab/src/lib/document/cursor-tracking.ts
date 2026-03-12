@@ -64,12 +64,19 @@ export function setupCursorTracking(
     broadcastCursor(null);
   }
 
+  // Reset throttle on enter so the cursor appears immediately without waiting
+  // for the next throttle window to expire
+  function handleMouseEnter() {
+    lastBroadcast = 0;
+  }
+
   // Apryse documentViewer mouseMove fires inside the iframe
   documentViewer.addEventListener("mouseMove", handleMouseMove);
 
-  // Use a native mouseleave on the outer web component element — the Apryse
+  // Use native enter/leave on the outer web component element — the Apryse
   // mouseLeave event isn't reliable for detecting when the cursor exits the viewer
   const webviewerEl = document.querySelector("apryse-webviewer");
+  webviewerEl?.addEventListener("mouseenter", handleMouseEnter);
   webviewerEl?.addEventListener("mouseleave", handleMouseLeave);
 
   const scrollElement = documentViewer.getScrollViewElement();
@@ -81,6 +88,7 @@ export function setupCursorTracking(
 
   cursorCleanupRef.current = () => {
     documentViewer.removeEventListener("mouseMove", handleMouseMove);
+    webviewerEl?.removeEventListener("mouseenter", handleMouseEnter);
     webviewerEl?.removeEventListener("mouseleave", handleMouseLeave);
     scrollElement.removeEventListener("scroll", handleScrollOrZoom);
     documentViewer.removeEventListener("zoomUpdated", handleScrollOrZoom);
