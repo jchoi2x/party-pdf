@@ -1,15 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import WebViewer from "@pdftron/webviewer";
 import YProvider from "y-partyserver/provider";
 import * as Y from "yjs";
 import { getDocument } from "@/lib/indexeddb";
-import { getStoredUserName } from "@/lib/username";
+import { getStoredUserName, getUserColor, getInitials } from "@/lib/username";
 import { useTheme } from "@/lib/theme";
 import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+
+export type ConnectionStatus = "connecting" | "connected" | "disconnected";
+export interface Collaborator {
+  name: string;
+  color: string;
+}
 
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
 const APRYSE_LICENSE = "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
@@ -25,6 +31,8 @@ export default function DocumentPage() {
   const [showNameDialog, setShowNameDialog] = useState(!getStoredUserName());
   const [isLoading, setIsLoading] = useState(true);
   const { isDark, toggleTheme } = useTheme();
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const viewerInstanceRef = useRef<Awaited<ReturnType<typeof WebViewer>> | null>(null);
   const viewerInitialized = useRef(false);
   const providerRef = useRef<InstanceType<typeof YProvider> | null>(null);
@@ -179,11 +187,46 @@ export default function DocumentPage() {
         }
       );
 
-      provider.on("status", ({ status }: { status: string }) => {
-        console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
+      const currentUser = getStoredUserName() || "Guest";
+      const currentColor = getUserColor();
+      provider.awareness.setLocalStateField("user", {
+        name: currentUser,
+        color: currentColor,
       });
 
-      provider.on("synced", async (synced: boolean) => {
+      function updateCollaborators() {
+        const states = provider.awareness.getStates();
+        const localClientId = provider.awareness.clientID;
+        const others: Collaborator[] = [];
+        states.forEach((state: Record<string, unknown>, clientId: number) => {
+          if (clientId === localClientId) return;
+          const user = state.user as Record<string, unknown> | undefined;
+          if (!user) return;
+          const name = typeof user.name === "string" && user.name.trim() ? user.name.trim() : null;
+          const color = typeof user.color === "string" && user.color ? user.color : "#90A4AE";
+          if (name) {
+            others.push({ name, color });
+          }
+        });
+        setCollaborators(others);
+      }
+
+      provider.awareness.on("change", updateCollaborators);
+
+      const validStatuses = new Set<ConnectionStatus>(["connecting", "connected", "disconnected"]);
+
+      function handleStatus({ status }: { status: string }) {
+        console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
+        if (validStatuses.has(status as ConnectionStatus)) {
+          setConnectionStatus(status as ConnectionStatus);
+        } else {
+          setConnectionStatus("disconnected");
+        }
+      }
+
+      provider.on("status", handleStatus);
+
+      async function handleSynced(synced: boolean) {
         console.log(`[y-partyserver] Synced: ${synced} — room: ${roomId}`);
         if (synced) {
           try {
@@ -197,9 +240,12 @@ export default function DocumentPage() {
             console.error("Failed to load initial annotations:", e);
           }
         }
-      });
+      }
+
+      provider.on("synced", handleSynced);
     } catch (e) {
       console.warn("Real-time collaboration setup failed:", e);
+      setConnectionStatus("disconnected");
     }
   }
 
@@ -216,12 +262,24 @@ export default function DocumentPage() {
     if (viewerInstanceRef.current) {
       viewerInstanceRef.current.Core.annotationManager.setCurrentUser(name);
     }
+    if (providerRef.current) {
+      providerRef.current.awareness.setLocalStateField("user", {
+        name,
+        color: getUserColor(),
+      });
+    }
   }
 
   function handleUserNameChange(name: string) {
     setUserName(name);
     if (viewerInstanceRef.current) {
       viewerInstanceRef.current.Core.annotationManager.setCurrentUser(name);
+    }
+    if (providerRef.current) {
+      providerRef.current.awareness.setLocalStateField("user", {
+        name,
+        color: getUserColor(),
+      });
     }
   }
 
@@ -236,6 +294,8 @@ export default function DocumentPage() {
           onUserNameChange={handleUserNameChange}
           isDark={isDark}
           onToggleTheme={toggleTheme}
+          connectionStatus={connectionStatus}
+          collaborators={collaborators}
         />
       )}
 
