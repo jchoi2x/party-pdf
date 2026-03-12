@@ -103,13 +103,20 @@ export default function DocumentPage() {
 
       annotationsMap.observe(async (event) => {
         if (isSyncing) return;
-        for (const [key] of event.changes.keys) {
-          if (event.transaction.origin === "local") continue;
-          const xfdf = annotationsMap.get(key);
-          if (!xfdf) continue;
+        if (event.transaction.origin === "local") return;
+
+        for (const [key, change] of event.changes.keys) {
           try {
             isSyncing = true;
-            await annotationManager.importAnnotationCommand(xfdf);
+            if (change.action === "delete") {
+              const deleteXfdf = `<?xml version="1.0" encoding="UTF-8" ?><xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve"><fields /><delete><id>${key}</id></delete></xfdf>`;
+              await annotationManager.importAnnotationCommand(deleteXfdf);
+            } else {
+              const xfdf = annotationsMap.get(key);
+              if (xfdf) {
+                await annotationManager.importAnnotations(xfdf);
+              }
+            }
             isSyncing = false;
           } catch (e) {
             isSyncing = false;
@@ -120,17 +127,28 @@ export default function DocumentPage() {
 
       annotationManager.addEventListener(
         "annotationChanged",
-        async (_annotations: any[], _action: string, { imported }: { imported: boolean }) => {
+        async (annotations: any[], action: string, { imported }: { imported: boolean }) => {
           if (imported || isSyncing) return;
           try {
-            const xfdf = await annotationManager.exportAnnotationCommand();
-            isSyncing = true;
-            ydoc.transact(() => {
-              annotationsMap.set("update", xfdf);
-            }, "local");
-            isSyncing = false;
+            for (const annotation of annotations) {
+              const annotId = annotation.Id;
+              if (!annotId) continue;
+
+              if (action === "delete") {
+                ydoc.transact(() => {
+                  annotationsMap.delete(annotId);
+                }, "local");
+              } else {
+                const xfdf = await annotationManager.exportAnnotations({
+                  annotList: [annotation],
+                  useDisplayAuthor: true,
+                });
+                ydoc.transact(() => {
+                  annotationsMap.set(annotId, xfdf);
+                }, "local");
+              }
+            }
           } catch (e) {
-            isSyncing = false;
             console.error("Failed to sync annotation:", e);
           }
         }
@@ -140,8 +158,20 @@ export default function DocumentPage() {
         console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
       });
 
-      provider.on("synced", (synced: boolean) => {
+      provider.on("synced", async (synced: boolean) => {
         console.log(`[y-partyserver] Synced: ${synced} — room: ${roomId}`);
+        if (synced) {
+          try {
+            isSyncing = true;
+            for (const [, xfdf] of annotationsMap) {
+              await annotationManager.importAnnotations(xfdf);
+            }
+            isSyncing = false;
+          } catch (e) {
+            isSyncing = false;
+            console.error("Failed to load initial annotations:", e);
+          }
+        }
       });
     } catch (e) {
       console.warn("Real-time collaboration setup failed:", e);
