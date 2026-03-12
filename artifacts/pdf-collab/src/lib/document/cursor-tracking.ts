@@ -30,10 +30,15 @@ export function setupCursorTracking(
       const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect();
+      const iframeEl = instance.UI.iframeWindow.frameElement as HTMLElement;
+      const iframeRect = iframeEl.getBoundingClientRect();
+
+      const iframeRelativeX = e.clientX - iframeRect.left;
+      const iframeRelativeY = e.clientY - iframeRect.top;
 
       const windowPoint = new instance.Core.Math.Point(
-        e.clientX - scrollRect.left + scrollElement.scrollLeft,
-        e.clientY - scrollRect.top + scrollElement.scrollTop
+        iframeRelativeX - scrollRect.left + scrollElement.scrollLeft,
+        iframeRelativeY - scrollRect.top + scrollElement.scrollTop
       );
 
       const selected = displayMode.getSelectedPages(windowPoint, windowPoint);
