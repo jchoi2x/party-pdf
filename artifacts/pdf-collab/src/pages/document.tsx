@@ -37,6 +37,7 @@ export default function DocumentPage() {
   const { isDark, toggleTheme } = useTheme();
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
+  const [showConnectingModal, setShowConnectingModal] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const viewerInstanceRef = useRef<Awaited<
     ReturnType<typeof WebViewer>
@@ -218,6 +219,18 @@ export default function DocumentPage() {
     }
   }, [isDark]);
 
+  // Show a "slow connection" modal only after a 4 s grace period while still
+  // connecting post-load — fast connects never trigger it. Disconnections show
+  // their own modal immediately (handled in the JSX below).
+  useEffect(() => {
+    if (isLoading || connectionStatus !== "connecting") {
+      setShowConnectingModal(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowConnectingModal(true), 4000);
+    return () => clearTimeout(timer);
+  }, [isLoading, connectionStatus]);
+
   function handleNameSave(name: string) {
     setUserName(name);
     setShowNameDialog(false);
@@ -284,7 +297,29 @@ export default function DocumentPage() {
         )}
         <div className="flex-1 relative overflow-hidden">
           {isLoading && <LoadingSpinner message="Loading document..." />}
-          {!isLoading && connectionStatus !== "connected" && (
+          {/* Slow-connect modal — only shown after 4 s grace period */}
+          {showConnectingModal && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="bg-card border border-border rounded-xl shadow-xl px-8 py-7 flex flex-col items-center gap-3 max-w-sm mx-4 text-center">
+                <div className="w-10 h-10 rounded-full bg-blue-500/15 flex items-center justify-center">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                </div>
+                <p className="font-semibold text-foreground text-base">Connecting…</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  This is taking longer than expected. Waiting for the collaboration server to respond.
+                </p>
+                <div className="flex gap-1.5 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Disconnected modal — shown immediately */}
+          {!isLoading && connectionStatus === "disconnected" && (
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
               <div className="bg-card border border-border rounded-xl shadow-xl px-8 py-7 flex flex-col items-center gap-3 max-w-sm mx-4 text-center">
                 <div className="w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center">
@@ -296,9 +331,7 @@ export default function DocumentPage() {
                 </div>
                 <p className="font-semibold text-foreground text-base">Connection isn't stable</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {connectionStatus === "connecting"
-                    ? "Establishing a connection to the collaboration server…"
-                    : "Lost connection to the collaboration server. Attempting to reconnect…"}
+                  Lost connection to the collaboration server. Attempting to reconnect…
                 </p>
                 <div className="flex gap-1.5 mt-1">
                   <span className="w-2 h-2 rounded-full bg-yellow-500 animate-bounce [animation-delay:-0.3s]" />
