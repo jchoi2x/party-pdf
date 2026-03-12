@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { House, PencilSimple, Sun, Moon } from "@phosphor-icons/react";
+import { House, PencilSimple, Sun, Moon, VideoCamera } from "@phosphor-icons/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ interface DocumentHeaderProps {
   onToggleTheme: () => void;
   connectionStatus: ConnectionStatus;
   collaborators: Collaborator[];
+  isMobile?: boolean;
+  onMobileVideoToggle?: () => void;
 }
 
 const STATUS_CONFIG: Record<ConnectionStatus, { color: string; label: string; pulse: boolean }> = {
@@ -36,6 +38,8 @@ export default function DocumentHeader({
   onToggleTheme,
   connectionStatus,
   collaborators,
+  isMobile,
+  onMobileVideoToggle,
 }: DocumentHeaderProps) {
   const [, navigate] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
@@ -132,6 +136,18 @@ export default function DocumentHeader({
                 </Tooltip>
               )}
             </div>
+          )}
+
+          {isMobile && onMobileVideoToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMobileVideoToggle}
+              className="h-9 w-9"
+              title="Open video panel"
+            >
+              <VideoCamera size={18} weight="bold" />
+            </Button>
           )}
 
           <Button

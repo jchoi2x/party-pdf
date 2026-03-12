@@ -12,6 +12,7 @@ import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import VideoPanel from "@/components/logical-units/VideoPanel";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 export interface Collaborator {
@@ -46,6 +47,8 @@ export default function DocumentPage() {
   const [cameraOn, setCameraOn] = useState(false);
   const [videoPanelCollapsed, setVideoPanelCollapsed] = useState(false);
   const [signalConnected, setSignalConnected] = useState(false);
+  const [mobileVideoOpen, setMobileVideoOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { localStream, remoteStreams, startCamera, stopCamera } = useWebRTC(id, signalConnected);
 
@@ -346,23 +349,41 @@ export default function DocumentPage() {
           onToggleTheme={toggleTheme}
           connectionStatus={connectionStatus}
           collaborators={collaborators}
+          isMobile={isMobile}
+          onMobileVideoToggle={() => setMobileVideoOpen(true)}
         />
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <VideoPanel
-          localStream={localStream}
-          remoteStreams={remoteStreams}
-          cameraOn={cameraOn}
-          onToggleCamera={handleToggleCamera}
-          collapsed={videoPanelCollapsed}
-          onToggleCollapse={() => setVideoPanelCollapsed((v) => !v)}
-        />
+        {!isMobile && (
+          <VideoPanel
+            localStream={localStream}
+            remoteStreams={remoteStreams}
+            cameraOn={cameraOn}
+            onToggleCamera={handleToggleCamera}
+            collapsed={videoPanelCollapsed}
+            onToggleCollapse={() => setVideoPanelCollapsed((v) => !v)}
+          />
+        )}
         <div className="flex-1 relative overflow-hidden">
           {isLoading && <LoadingSpinner message="Loading document..." />}
           <div ref={viewerRef} className="w-full h-full" />
         </div>
       </div>
+
+      {isMobile && (
+        <VideoPanel
+          localStream={localStream}
+          remoteStreams={remoteStreams}
+          cameraOn={cameraOn}
+          onToggleCamera={handleToggleCamera}
+          collapsed={false}
+          onToggleCollapse={() => {}}
+          isMobile
+          mobileOpen={mobileVideoOpen}
+          onMobileClose={() => setMobileVideoOpen(false)}
+        />
+      )}
     </div>
   );
 }
