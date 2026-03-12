@@ -1,9 +1,10 @@
 import WebViewer from "@pdftron/webviewer";
 
 export function applyWebViewerTheme(_instance: Awaited<ReturnType<typeof WebViewer>>, dark: boolean) {
-  const iframe = document.querySelector('apryse-webviewer iframe') as HTMLIFrameElement | null;
-  const style = iframe?.contentDocument?.documentElement?.style;
-  if (!style) return;
+  const component = document.querySelector('apryse-webviewer') as HTMLElement | null;
+  if (!component?.shadowRoot) return;
+  const host = component.shadowRoot.host as HTMLElement;
+  const style = host.style;
   if (dark) {
     style.setProperty("--gray-1", "#0d1421");
     style.setProperty("--gray-2", "#131d30");
