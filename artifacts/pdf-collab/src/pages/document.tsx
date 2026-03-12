@@ -320,7 +320,7 @@ export default function DocumentPage() {
           )}
           {/* Disconnected modal — shown immediately */}
           {!isLoading && connectionStatus === "disconnected" && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="absolute inset-0 z-50 flex item s-center justify-center bg-black/40 backdrop-blur-sm">
               <div className="bg-card border border-border rounded-xl shadow-xl px-8 py-7 flex flex-col items-center gap-3 max-w-sm mx-4 text-center">
                 <div className="w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-500">

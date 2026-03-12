@@ -22,15 +22,28 @@ export function setupYjsCollaboration(
     providerRef.current = provider;
 
     const annotationsMap = ydoc.getMap<string>("annotations");
+
+    // isSyncing prevents the annotationChanged listener from re-broadcasting
+    // changes that originated from a remote import.
     let isSyncing = false;
 
+    // initialSyncComplete gates the observe callback so it doesn't process
+    // changes (including spurious deletes from CRDT tombstones) that arrive
+    // during the initial sync. handleSynced owns the initial load; after that
+    // the observe handles real-time updates from other users.
+    let initialSyncComplete = false;
+
     annotationsMap.observe(async (event) => {
+      // Skip everything until the initial sync is done — handleSynced handles that
+      if (!initialSyncComplete) return;
       if (isSyncing) return;
       if (event.transaction.origin === "local") return;
 
-      for (const [key, change] of event.changes.keys) {
-        try {
-          isSyncing = true;
+      // Keep isSyncing true for the entire batch, not just per-iteration,
+      // to close the race window between iterations.
+      isSyncing = true;
+      try {
+        for (const [key, change] of event.changes.keys) {
           if (change.action === "delete") {
             const deleteXfdf = `<?xml version="1.0" encoding="UTF-8" ?><xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve"><fields /><delete><id>${key}</id></delete></xfdf>`;
             await annotationManager.importAnnotationCommand(deleteXfdf);
@@ -40,11 +53,11 @@ export function setupYjsCollaboration(
               await annotationManager.importAnnotations(xfdf);
             }
           }
-          isSyncing = false;
-        } catch (e) {
-          isSyncing = false;
-          console.error("Failed to apply remote annotation:", e);
         }
+      } catch (e) {
+        console.error("Failed to apply remote annotation:", e);
+      } finally {
+        isSyncing = false;
       }
     });
 
@@ -107,9 +120,13 @@ export function setupYjsCollaboration(
         const peerId =
           typeof user.peerId === "string" ? user.peerId : undefined;
         const rawCursor = state.cursor as CursorPosition | null | undefined;
-        const cursor = rawCursor && typeof rawCursor.pageNumber === "number" && typeof rawCursor.x === "number" && typeof rawCursor.y === "number"
-          ? rawCursor
-          : null;
+        const cursor =
+          rawCursor &&
+          typeof rawCursor.pageNumber === "number" &&
+          typeof rawCursor.x === "number" &&
+          typeof rawCursor.y === "number"
+            ? rawCursor
+            : null;
         if (name) {
           others.push({ name, color, peerId, cursor });
         }
@@ -126,7 +143,6 @@ export function setupYjsCollaboration(
     ]);
 
     function handleStatus({ status }: { status: string }) {
-      console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
       if (validStatuses.has(status as ConnectionStatus)) {
         setConnectionStatus(status as ConnectionStatus);
       } else {
@@ -137,18 +153,19 @@ export function setupYjsCollaboration(
     provider.on("status", handleStatus);
 
     async function handleSynced(synced: boolean) {
-      console.log(`[y-partyserver] Synced: ${synced} — room: ${roomId}`);
-      if (synced) {
-        try {
-          isSyncing = true;
-          for (const [, xfdf] of annotationsMap) {
-            await annotationManager.importAnnotations(xfdf);
-          }
-          isSyncing = false;
-        } catch (e) {
-          isSyncing = false;
-          console.error("Failed to load initial annotations:", e);
+      if (!synced) return;
+      isSyncing = true;
+      try {
+        for (const [, xfdf] of annotationsMap) {
+          await annotationManager.importAnnotations(xfdf);
         }
+      } catch (e) {
+        console.error("Failed to load initial annotations:", e);
+      } finally {
+        isSyncing = false;
+        // Only open the observe callback for real-time updates after the
+        // initial load is fully complete.
+        initialSyncComplete = true;
       }
     }
 
