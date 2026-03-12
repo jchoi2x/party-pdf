@@ -7,8 +7,10 @@ import * as Y from "yjs";
 import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName, getUserColor, getInitials } from "@/lib/username";
 import { useTheme } from "@/lib/theme";
+import { useWebRTC } from "@/hooks/use-webrtc";
 import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
+import VideoPanel from "@/components/logical-units/VideoPanel";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
@@ -41,6 +43,26 @@ export default function DocumentPage() {
   > | null>(null);
   const viewerInitialized = useRef(false);
   const providerRef = useRef<InstanceType<typeof YProvider> | null>(null);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [videoPanelCollapsed, setVideoPanelCollapsed] = useState(false);
+  const [signalConnected, setSignalConnected] = useState(false);
+
+  const { localStream, remoteStreams, startCamera, stopCamera } = useWebRTC(id, signalConnected);
+
+  const handleToggleCamera = useCallback(async () => {
+    if (cameraOn) {
+      stopCamera();
+      setCameraOn(false);
+    } else {
+      setSignalConnected(true);
+      const success = await startCamera();
+      if (success) {
+        setCameraOn(true);
+      } else {
+        toast.error("Could not access camera. Check permissions and try again.");
+      }
+    }
+  }, [cameraOn, startCamera, stopCamera]);
 
   useEffect(() => {
     if (!id) {
@@ -327,9 +349,19 @@ export default function DocumentPage() {
         />
       )}
 
-      <div className="flex-1 relative overflow-hidden">
-        {isLoading && <LoadingSpinner message="Loading document..." />}
-        <div ref={viewerRef} className="w-full h-full" />
+      <div className="flex-1 flex overflow-hidden">
+        <VideoPanel
+          localStream={localStream}
+          remoteStreams={remoteStreams}
+          cameraOn={cameraOn}
+          onToggleCamera={handleToggleCamera}
+          collapsed={videoPanelCollapsed}
+          onToggleCollapse={() => setVideoPanelCollapsed((v) => !v)}
+        />
+        <div className="flex-1 relative overflow-hidden">
+          {isLoading && <LoadingSpinner message="Loading document..." />}
+          <div ref={viewerRef} className="w-full h-full" />
+        </div>
       </div>
     </div>
   );
