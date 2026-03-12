@@ -3,7 +3,6 @@ import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import WebViewer from "@pdftron/webviewer";
 import YProvider from "y-partyserver/provider";
-import * as Y from "yjs";
 import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName, getUserColor, getInitials } from "@/lib/username";
 import { useTheme } from "@/lib/theme";
@@ -14,65 +13,18 @@ import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import VideoPanel from "@/components/logical-units/VideoPanel";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-export type ConnectionStatus = "connecting" | "connected" | "disconnected";
-export interface CursorPosition {
-  pageNumber: number;
-  x: number;
-  y: number;
-}
-
-export interface Collaborator {
-  name: string;
-  color: string;
-  peerId?: string;
-  cursor?: CursorPosition | null;
-}
+import { applyWebViewerTheme } from "@/lib/document/theme";
+import { setupCursorTracking, updateCursorOverlay } from "@/lib/document/cursor-tracking";
+import { setupYjsCollaboration } from "@/lib/document/collaboration";
+import type { ConnectionStatus, Collaborator } from "@/lib/document/types";
+export type { ConnectionStatus, CursorPosition, Collaborator } from "@/lib/document/types";
 
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
-
-function applyWebViewerTheme(instance: Awaited<ReturnType<typeof WebViewer>>, dark: boolean) {
-  const iframeWindow = instance.UI.iframeWindow;
-  if (!iframeWindow) return;
-  const style = iframeWindow.document.documentElement.style;
-  if (dark) {
-    // Base grays — mapped to our dark navy palette
-    style.setProperty("--gray-1", "#0d1421");
-    style.setProperty("--gray-2", "#131d30");
-    style.setProperty("--gray-3", "#1a2640");
-    style.setProperty("--gray-4", "#263348");
-    style.setProperty("--gray-5", "#4a5870");
-    style.setProperty("--gray-6", "#8a9ab8");
-    style.setProperty("--gray-7", "#b0bed8");
-    style.setProperty("--gray-8", "#ccd4e8");
-    style.setProperty("--gray-9", "#d8e0f0");
-    style.setProperty("--gray-10", "#e4eaf8");
-    style.setProperty("--gray-11", "#edf0fa");
-    style.setProperty("--gray-12", "#ffffff");
-    // Blues — our primary accent (hsl 225 40% 65%)
-    style.setProperty("--blue-1", "#0d1829");
-    style.setProperty("--blue-2", "#111f38");
-    style.setProperty("--blue-3", "#1a2e50");
-    style.setProperty("--blue-4", "#1f3660");
-    style.setProperty("--blue-5", "#3a5490");
-    style.setProperty("--blue-6", "#7594d6");
-  } else {
-    // Remove overrides — let WebViewer use its built-in light defaults
-    const vars = [
-      "--gray-1","--gray-2","--gray-3","--gray-4","--gray-5",
-      "--gray-6","--gray-7","--gray-8","--gray-9","--gray-10",
-      "--gray-11","--gray-12",
-      "--blue-1","--blue-2","--blue-3","--blue-4","--blue-5","--blue-6",
-    ];
-    vars.forEach((v) => style.removeProperty(v));
-  }
-}
 
 const APRYSE_LICENSE =
   "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
 const WEBVIEWER_CDN =
   "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
-const PARTY_HOST = "oblockparty.xvzf.workers.dev";
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -125,6 +77,19 @@ export default function DocumentPage() {
       }
     }
   }, [cameraOn, startCamera, stopCamera]);
+
+  const cursorCleanupRef = useRef<(() => void) | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const collaboratorsRef = useRef<Collaborator[]>([]);
+
+  const doUpdateCursorOverlay = useCallback(() => {
+    updateCursorOverlay(overlayRef, viewerInstanceRef, viewerRef, collaboratorsRef);
+  }, []);
+
+  useEffect(() => {
+    collaboratorsRef.current = collaborators;
+    doUpdateCursorOverlay();
+  }, [collaborators, doUpdateCursorOverlay]);
 
   useEffect(() => {
     if (!id) {
@@ -183,6 +148,7 @@ export default function DocumentPage() {
         );
 
         viewerInstanceRef.current = instance;
+        (window as any).instance = instance;
 
         instance.UI.disableElements(['toolbarGroup-Edit']);
 
@@ -201,8 +167,8 @@ export default function DocumentPage() {
 
         documentViewer.addEventListener("documentLoaded", () => {
           setIsLoading(false);
-          setupYjsCollaboration(annotationManager, id!);
-          setupCursorTracking(instance);
+          setupYjsCollaboration(annotationManager, id!, providerRef, setCollaborators, setConnectionStatus);
+          setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
         });
 
         if (localBlob) {
@@ -228,305 +194,6 @@ export default function DocumentPage() {
       }
     };
   }, [id]);
-
-  function setupCursorTracking(instance: Awaited<ReturnType<typeof WebViewer>>) {
-    const { documentViewer } = instance.Core;
-    const iframeDoc = instance.UI.iframeWindow.document;
-    const scrollContainer = iframeDoc.querySelector(".DocumentContainer") as HTMLElement | null;
-    if (!scrollContainer) return;
-
-    let lastBroadcast = 0;
-    const THROTTLE_MS = 33;
-
-    function handleMouseMove(e: MouseEvent) {
-      const now = Date.now();
-      if (now - lastBroadcast < THROTTLE_MS) return;
-      lastBroadcast = now;
-
-      const provider = providerRef.current;
-      if (!provider) return;
-
-      try {
-        const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
-        const scrollElement = documentViewer.getScrollViewElement();
-        const scrollRect = scrollElement.getBoundingClientRect();
-
-        const windowPoint = new instance.Core.Math.Point(
-          e.clientX - scrollRect.left + scrollElement.scrollLeft,
-          e.clientY - scrollRect.top + scrollElement.scrollTop
-        );
-
-        const selected = displayMode.getSelectedPages(windowPoint, windowPoint);
-        const page = selected?.first || selected?.last || null;
-        if (!page) {
-          broadcastCursor(null);
-          return;
-        }
-
-        const pagePoint = displayMode.windowToPage(windowPoint, page);
-        broadcastCursor({
-          pageNumber: page,
-          x: pagePoint.x,
-          y: pagePoint.y,
-        });
-      } catch {
-        // ignore coordinate conversion errors
-      }
-    }
-
-    function handleMouseLeave() {
-      broadcastCursor(null);
-    }
-
-    function broadcastCursor(cursor: CursorPosition | null) {
-      const provider = providerRef.current;
-      if (!provider) return;
-      provider.awareness.setLocalStateField("cursor", cursor);
-    }
-
-    scrollContainer.addEventListener("mousemove", handleMouseMove);
-    scrollContainer.addEventListener("mouseleave", handleMouseLeave);
-
-    const scrollElement = documentViewer.getScrollViewElement();
-
-    function handleScrollOrZoom() {
-      updateCursorOverlay();
-    }
-
-    scrollElement.addEventListener("scroll", handleScrollOrZoom);
-    documentViewer.addEventListener("zoomUpdated", handleScrollOrZoom);
-
-    cursorCleanupRef.current = () => {
-      scrollContainer.removeEventListener("mousemove", handleMouseMove);
-      scrollContainer.removeEventListener("mouseleave", handleMouseLeave);
-      scrollElement.removeEventListener("scroll", handleScrollOrZoom);
-      documentViewer.removeEventListener("zoomUpdated", handleScrollOrZoom);
-      broadcastCursor(null);
-    };
-  }
-
-  const cursorCleanupRef = useRef<(() => void) | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const collaboratorsRef = useRef<Collaborator[]>([]);
-
-  useEffect(() => {
-    collaboratorsRef.current = collaborators;
-    updateCursorOverlay();
-  }, [collaborators]);
-
-  function sanitizeColor(color: string): string {
-    return /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : "#90A4AE";
-  }
-
-  function updateCursorOverlay() {
-    const overlay = overlayRef.current;
-    const instance = viewerInstanceRef.current;
-    if (!overlay || !instance) return;
-
-    const collabs = collaboratorsRef.current;
-    const { documentViewer } = instance.Core;
-
-    while (overlay.firstChild) overlay.removeChild(overlay.firstChild);
-
-    for (const collab of collabs) {
-      if (!collab.cursor) continue;
-
-      try {
-        const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
-        const pagePoint = new instance.Core.Math.Point(collab.cursor.x, collab.cursor.y);
-        const windowPoint = displayMode.pageToWindow(pagePoint, collab.cursor.pageNumber);
-
-        const scrollElement = documentViewer.getScrollViewElement();
-        const scrollRect = scrollElement.getBoundingClientRect();
-        const iframeEl = instance.UI.iframeWindow.frameElement as HTMLElement;
-        const iframeRect = iframeEl.getBoundingClientRect();
-        const viewerContainer = viewerRef.current;
-        if (!viewerContainer) continue;
-        const containerRect = viewerContainer.getBoundingClientRect();
-
-        const screenX = windowPoint.x - scrollElement.scrollLeft + scrollRect.left + iframeRect.left - containerRect.left;
-        const screenY = windowPoint.y - scrollElement.scrollTop + scrollRect.top + iframeRect.top - containerRect.top;
-
-        if (screenX < 0 || screenY < 0 || screenX > containerRect.width || screenY > containerRect.height) continue;
-
-        const safeColor = sanitizeColor(collab.color);
-
-        const wrapper = document.createElement("div");
-        wrapper.style.cssText = `position:absolute;left:${screenX}px;top:${screenY}px;pointer-events:none;z-index:50;transition:left 0.05s linear,top 0.05s linear;`;
-
-        const svgNs = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(svgNs, "svg");
-        svg.setAttribute("width", "16");
-        svg.setAttribute("height", "20");
-        svg.setAttribute("viewBox", "0 0 16 20");
-        svg.setAttribute("fill", "none");
-        svg.style.filter = "drop-shadow(0 1px 2px rgba(0,0,0,0.3))";
-        const path = document.createElementNS(svgNs, "path");
-        path.setAttribute("d", "M0 0L16 12H6L4 20L0 0Z");
-        path.setAttribute("fill", safeColor);
-        path.setAttribute("stroke", "#fff");
-        path.setAttribute("stroke-width", "1");
-        svg.appendChild(path);
-        wrapper.appendChild(svg);
-
-        const label = document.createElement("span");
-        label.textContent = collab.name;
-        label.style.cssText = `position:absolute;left:14px;top:12px;background:${safeColor};color:#fff;font-size:11px;line-height:1;padding:2px 6px;border-radius:4px;white-space:nowrap;font-family:system-ui,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.2);`;
-        wrapper.appendChild(label);
-
-        overlay.appendChild(wrapper);
-      } catch {
-        // ignore rendering errors for individual cursors
-      }
-    }
-  }
-
-  function setupYjsCollaboration(annotationManager: any, roomId: string) {
-    try {
-      const ydoc = new Y.Doc();
-
-      const provider = new YProvider(PARTY_HOST, roomId, ydoc, {
-        party: "room",
-      });
-      providerRef.current = provider;
-
-      const annotationsMap = ydoc.getMap<string>("annotations");
-      let isSyncing = false;
-
-      annotationsMap.observe(async (event) => {
-        if (isSyncing) return;
-        if (event.transaction.origin === "local") return;
-
-        for (const [key, change] of event.changes.keys) {
-          try {
-            isSyncing = true;
-            if (change.action === "delete") {
-              const deleteXfdf = `<?xml version="1.0" encoding="UTF-8" ?><xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve"><fields /><delete><id>${key}</id></delete></xfdf>`;
-              await annotationManager.importAnnotationCommand(deleteXfdf);
-            } else {
-              const xfdf = annotationsMap.get(key);
-              if (xfdf) {
-                await annotationManager.importAnnotations(xfdf);
-              }
-            }
-            isSyncing = false;
-          } catch (e) {
-            isSyncing = false;
-            console.error("Failed to apply remote annotation:", e);
-          }
-        }
-      });
-
-      annotationManager.addEventListener(
-        "annotationChanged",
-        async (
-          annotations: any[],
-          action: string,
-          { imported }: { imported: boolean },
-        ) => {
-          if (imported || isSyncing) return;
-          try {
-            for (const annotation of annotations) {
-              const annotId = annotation.Id;
-              if (!annotId) continue;
-
-              if (action === "delete") {
-                ydoc.transact(() => {
-                  annotationsMap.delete(annotId);
-                }, "local");
-              } else {
-                const xfdf = await annotationManager.exportAnnotations({
-                  annotList: [annotation],
-                  useDisplayAuthor: true,
-                });
-                ydoc.transact(() => {
-                  annotationsMap.set(annotId, xfdf);
-                }, "local");
-              }
-            }
-          } catch (e) {
-            console.error("Failed to sync annotation:", e);
-          }
-        },
-      );
-
-      const currentUser = getStoredUserName() || "Guest";
-      const currentColor = getUserColor();
-      provider.awareness.setLocalStateField("user", {
-        name: currentUser,
-        color: currentColor,
-      });
-
-      function updateCollaborators() {
-        const states = provider.awareness.getStates();
-        const localClientId = provider.awareness.clientID;
-        const others: Collaborator[] = [];
-        states.forEach((state: Record<string, unknown>, clientId: number) => {
-          if (clientId === localClientId) return;
-          const user = state.user as Record<string, unknown> | undefined;
-          if (!user) return;
-          const name =
-            typeof user.name === "string" && user.name.trim()
-              ? user.name.trim()
-              : null;
-          const color =
-            typeof user.color === "string" && user.color
-              ? user.color
-              : "#90A4AE";
-          const peerId =
-            typeof user.peerId === "string" ? user.peerId : undefined;
-          const rawCursor = state.cursor as CursorPosition | null | undefined;
-          const cursor = rawCursor && typeof rawCursor.pageNumber === "number" && typeof rawCursor.x === "number" && typeof rawCursor.y === "number"
-            ? rawCursor
-            : null;
-          if (name) {
-            others.push({ name, color, peerId, cursor });
-          }
-        });
-        setCollaborators(others);
-      }
-
-      provider.awareness.on("change", updateCollaborators);
-
-      const validStatuses = new Set<ConnectionStatus>([
-        "connecting",
-        "connected",
-        "disconnected",
-      ]);
-
-      function handleStatus({ status }: { status: string }) {
-        console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
-        if (validStatuses.has(status as ConnectionStatus)) {
-          setConnectionStatus(status as ConnectionStatus);
-        } else {
-          setConnectionStatus("disconnected");
-        }
-      }
-
-      provider.on("status", handleStatus);
-
-      async function handleSynced(synced: boolean) {
-        console.log(`[y-partyserver] Synced: ${synced} — room: ${roomId}`);
-        if (synced) {
-          try {
-            isSyncing = true;
-            for (const [, xfdf] of annotationsMap) {
-              await annotationManager.importAnnotations(xfdf);
-            }
-            isSyncing = false;
-          } catch (e) {
-            isSyncing = false;
-            console.error("Failed to load initial annotations:", e);
-          }
-        }
-      }
-
-      provider.on("synced", handleSynced);
-    } catch (e) {
-      console.warn("Real-time collaboration setup failed:", e);
-      setConnectionStatus("disconnected");
-    }
-  }
 
   useEffect(() => {
     if (providerRef.current && localPeerId) {
