@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import WebViewer from "@pdftron/webviewer";
-import { WebsocketProvider } from "y-websocket";
+import YProvider from "y-partyserver/provider";
 import * as Y from "yjs";
-import PartySocket from "partysocket";
 import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName } from "@/lib/username";
 import NameDialog from "@/components/NameDialog";
@@ -12,6 +11,7 @@ import DocumentHeader from "@/components/DocumentHeader";
 
 const APRYSE_LICENSE = "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
 const WEBVIEWER_CDN = "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
+const PARTY_HOST = "oblockparty.xvzf.workers.dev";
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,7 +23,7 @@ export default function DocumentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const viewerInstanceRef = useRef<Awaited<ReturnType<typeof WebViewer>> | null>(null);
   const viewerInitialized = useRef(false);
-  const providerRef = useRef<WebsocketProvider | null>(null);
+  const providerRef = useRef<InstanceType<typeof YProvider> | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -94,28 +94,21 @@ export default function DocumentPage() {
     try {
       const ydoc = new Y.Doc();
 
-      const host = window.location.host;
-      const wsUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${host}/yjs`;
-
-      const wsProvider = new WebsocketProvider(wsUrl, roomId, ydoc, {
-        WebSocketPolyfill: PartySocket as any,
-      });
-      providerRef.current = wsProvider;
+      const provider = new YProvider(PARTY_HOST, roomId, ydoc);
+      providerRef.current = provider;
 
       const annotationsMap = ydoc.getMap<string>("annotations");
-      const currentUser = getStoredUserName() || "Guest";
-
       let isSyncing = false;
 
       annotationsMap.observe(async (event) => {
         if (isSyncing) return;
-        for (const [key, xfdf] of event.changes.keys) {
+        for (const [key] of event.changes.keys) {
           if (event.transaction.origin === "local") continue;
+          const xfdf = annotationsMap.get(key);
+          if (!xfdf) continue;
           try {
             isSyncing = true;
-            if (xfdf !== null) {
-              await annotationManager.importAnnotationCommand(annotationsMap.get(key));
-            }
+            await annotationManager.importAnnotationCommand(xfdf);
             isSyncing = false;
           } catch (e) {
             isSyncing = false;
@@ -124,23 +117,30 @@ export default function DocumentPage() {
         }
       });
 
-      annotationManager.addEventListener("annotationChanged", async (annotations: any[], action: string, { imported }: { imported: boolean }) => {
-        if (imported || isSyncing) return;
-        try {
-          const xfdf = await annotationManager.exportAnnotationCommand();
-          isSyncing = true;
-          ydoc.transact(() => {
-            annotationsMap.set("update", xfdf);
-          }, "local");
-          isSyncing = false;
-        } catch (e) {
-          isSyncing = false;
-          console.error("Failed to sync annotation:", e);
+      annotationManager.addEventListener(
+        "annotationChanged",
+        async (_annotations: any[], _action: string, { imported }: { imported: boolean }) => {
+          if (imported || isSyncing) return;
+          try {
+            const xfdf = await annotationManager.exportAnnotationCommand();
+            isSyncing = true;
+            ydoc.transact(() => {
+              annotationsMap.set("update", xfdf);
+            }, "local");
+            isSyncing = false;
+          } catch (e) {
+            isSyncing = false;
+            console.error("Failed to sync annotation:", e);
+          }
         }
+      );
+
+      provider.on("status", ({ status }: { status: string }) => {
+        console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
       });
 
-      wsProvider.on("status", ({ status }: { status: string }) => {
-        console.log(`[y-websocket] Status: ${status} for room: ${roomId}`);
+      provider.on("synced", (synced: boolean) => {
+        console.log(`[y-partyserver] Synced: ${synced} — room: ${roomId}`);
       });
     } catch (e) {
       console.warn("Real-time collaboration setup failed:", e);

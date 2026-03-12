@@ -24,23 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Y.js Collaboration Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "Start application"
-
-[[workflows.workflow]]
-name = "Y.js Collaboration Server"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/party-server run dev"
-waitForPort = 1999
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[workflows.workflow]]
 name = "Start application"
@@ -51,7 +35,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=23260 BASE_PATH=/ PARTY_PORT=1999 pnpm --filter @workspace/pdf-collab run dev"
+args = "PORT=23260 BASE_PATH=/ pnpm --filter @workspace/pdf-collab run dev"
 waitForPort = 23260
 
 [agent]

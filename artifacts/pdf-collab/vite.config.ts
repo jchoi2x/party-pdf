@@ -62,13 +62,6 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
-    proxy: {
-      "/yjs": {
-        target: `ws://localhost:${process.env.PARTY_PORT || 1999}`,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/yjs/, ""),
-      },
-    },
     fs: {
       strict: true,
       deny: ["**/.*"],

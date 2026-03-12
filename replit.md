@@ -30,11 +30,12 @@ pnpm workspace monorepo using TypeScript. Contains a collaborative PDF document 
   - User identity management with localStorage + name prompt dialog
   - Deep navy blue + warm amber design theme (Space Grotesk + Inter fonts)
 
-### Y.js Collaboration Server (`artifacts/party-server`)
-- **Port**: 1999
-- **Stack**: Node.js + `@y/websocket-server` + `ws`
+### Y.js Collaboration Server (External — Cloudflare Workers)
+- **Host**: `oblockparty.xvzf.workers.dev`
+- **Stack**: Cloudflare Workers + `y-partyserver`
 - **Purpose**: Provides WebSocket-based Y.js document sync for multi-user annotation collaboration
-- **Protocol**: Standard Y.js WebSocket protocol, rooms identified by document session ID
+- **Client**: `y-partyserver/provider` (`YProvider`) connects to `wss://oblockparty.xvzf.workers.dev/parties/main/{roomId}`
+- **Protocol**: Y.js sync protocol via partysocket; rooms identified by ULID document session ID
 
 ## Structure
 
