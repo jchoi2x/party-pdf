@@ -32,7 +32,8 @@ export function setupCursorTracking(
         .getDisplayMode();
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect();
-      const iframeEl = instance.UI.iframeWindow.frameElement as HTMLElement;
+      const iframeEl = document.querySelector('apryse-webviewer') as HTMLElement | null;
+      if (!iframeEl) return;
       const iframeRect = iframeEl.getBoundingClientRect();
 
       const iframeRelativeX = e.clientX - iframeRect.left;
@@ -131,7 +132,8 @@ export function updateCursorOverlay(
 
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect();
-      const iframeEl = instance.UI.iframeWindow.frameElement as HTMLElement;
+      const iframeEl = document.querySelector('apryse-webviewer') as HTMLElement | null;
+      if (!iframeEl) continue;
       const iframeRect = iframeEl.getBoundingClientRect();
       const viewerContainer = viewerRef.current;
       if (!viewerContainer) continue;
