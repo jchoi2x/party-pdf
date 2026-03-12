@@ -177,6 +177,8 @@ export default function DocumentPage() {
 
         viewerInstanceRef.current = instance;
 
+        instance.UI.disableElements(['toolbarGroup-Edit']);
+
         instance.UI.setTheme(
           isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT,
         );
