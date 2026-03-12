@@ -6,8 +6,9 @@ import YProvider from "y-partyserver/provider";
 import * as Y from "yjs";
 import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName } from "@/lib/username";
-import NameDialog from "@/components/NameDialog";
-import DocumentHeader from "@/components/DocumentHeader";
+import NameDialog from "@/components/logical-units/NameDialog";
+import DocumentHeader from "@/components/logical-units/DocumentHeader";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const APRYSE_LICENSE = "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
 const WEBVIEWER_CDN = "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
@@ -175,14 +176,7 @@ export default function DocumentPage() {
       )}
 
       <div className="flex-1 relative overflow-hidden">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-              <p className="text-sm text-muted-foreground">Loading document...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingSpinner message="Loading document..." />}
         <div ref={viewerRef} className="w-full h-full" />
       </div>
     </div>
