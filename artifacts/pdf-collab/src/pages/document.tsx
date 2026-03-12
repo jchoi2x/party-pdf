@@ -10,6 +10,7 @@ import NameDialog from "@/components/logical-units/NameDialog";
 import DocumentHeader from "@/components/logical-units/DocumentHeader";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
+const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
 const APRYSE_LICENSE = "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
 const WEBVIEWER_CDN = "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
 const PARTY_HOST = "oblockparty.xvzf.workers.dev";
@@ -36,15 +37,38 @@ export default function DocumentPage() {
 
     async function init() {
       try {
-        const doc = await getDocument(id!);
-        if (!doc) {
-          toast.error("Document not found. Please upload the PDF again.");
-          navigate("/");
-          return;
+        let docUrl: string;
+        let name: string;
+
+        const cached = sessionStorage.getItem(id!);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          docUrl = parsed.downloadUrl;
+          name = parsed.name;
+        } else {
+          try {
+            const res = await fetch(`${API_BASE}/download-url/${id}`);
+            if (!res.ok) {
+              throw new Error("Failed to fetch download URL");
+            }
+            const data = await res.json();
+            docUrl = data.url;
+            name = "Shared Document";
+          } catch (cloudErr) {
+            console.warn("Cloud download failed, trying local fallback:", cloudErr);
+            const localDoc = await getDocument(id!);
+            if (!localDoc) {
+              toast.error("Document not found. Please upload the PDF again.");
+              navigate("/");
+              return;
+            }
+            blobUrl = URL.createObjectURL(localDoc.blob);
+            docUrl = blobUrl;
+            name = localDoc.name;
+          }
         }
 
-        setDocName(doc.name);
-        blobUrl = URL.createObjectURL(doc.blob);
+        setDocName(name);
 
         if (!viewerRef.current || viewerInitialized.current) return;
         viewerInitialized.current = true;
@@ -53,7 +77,7 @@ export default function DocumentPage() {
           {
             path: WEBVIEWER_CDN,
             licenseKey: APRYSE_LICENSE,
-            initialDoc: blobUrl,
+            initialDoc: docUrl,
           },
           viewerRef.current
         );
@@ -75,7 +99,7 @@ export default function DocumentPage() {
         });
       } catch (err) {
         console.error("WebViewer initialization failed:", err);
-        toast.error("Failed to load document viewer. Please try again.");
+        toast.error("Failed to load document. Please try again.");
         setIsLoading(false);
       }
     }
