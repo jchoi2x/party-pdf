@@ -35,11 +35,10 @@ export default function DocumentPage() {
       return;
     }
 
-    let blobUrl: string | null = null;
-
     async function init() {
       try {
-        let docUrl: string;
+        let docUrl: string | null = null;
+        let localBlob: Blob | null = null;
         let name: string;
 
         const cached = sessionStorage.getItem(id!);
@@ -64,8 +63,7 @@ export default function DocumentPage() {
               navigate("/");
               return;
             }
-            blobUrl = URL.createObjectURL(localDoc.blob);
-            docUrl = blobUrl;
+            localBlob = localDoc.blob;
             name = localDoc.name;
           }
         }
@@ -79,7 +77,7 @@ export default function DocumentPage() {
           {
             path: WEBVIEWER_CDN,
             licenseKey: APRYSE_LICENSE,
-            initialDoc: docUrl,
+            ...(docUrl ? { initialDoc: docUrl } : {}),
           },
           viewerRef.current
         );
@@ -94,13 +92,13 @@ export default function DocumentPage() {
         annotationManager.setCurrentUser(currentUser);
 
         documentViewer.addEventListener("documentLoaded", () => {
-          if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-            blobUrl = null;
-          }
           setIsLoading(false);
           setupYjsCollaboration(annotationManager, id!);
         });
+
+        if (localBlob) {
+          instance.UI.loadDocument(localBlob, { filename: name });
+        }
       } catch (err) {
         console.error("WebViewer initialization failed:", err);
         toast.error("Failed to load document. Please try again.");
@@ -111,7 +109,6 @@ export default function DocumentPage() {
     init();
 
     return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
       if (providerRef.current) {
         providerRef.current.destroy();
         providerRef.current = null;
