@@ -18,8 +18,10 @@ export interface Collaborator {
 }
 
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
-const APRYSE_LICENSE = "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
-const WEBVIEWER_CDN = "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
+const APRYSE_LICENSE =
+  "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
+const WEBVIEWER_CDN =
+  "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
 const PARTY_HOST = "oblockparty.xvzf.workers.dev";
 
 export default function DocumentPage() {
@@ -31,9 +33,12 @@ export default function DocumentPage() {
   const [showNameDialog, setShowNameDialog] = useState(!getStoredUserName());
   const [isLoading, setIsLoading] = useState(true);
   const { isDark, toggleTheme } = useTheme();
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("connecting");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const viewerInstanceRef = useRef<Awaited<ReturnType<typeof WebViewer>> | null>(null);
+  const viewerInstanceRef = useRef<Awaited<
+    ReturnType<typeof WebViewer>
+  > | null>(null);
   const viewerInitialized = useRef(false);
   const providerRef = useRef<InstanceType<typeof YProvider> | null>(null);
 
@@ -64,7 +69,10 @@ export default function DocumentPage() {
             docUrl = data.url;
             name = "Shared Document";
           } catch (cloudErr) {
-            console.warn("Cloud download failed, trying local fallback:", cloudErr);
+            console.warn(
+              "Cloud download failed, trying local fallback:",
+              cloudErr,
+            );
             const localDoc = await getDocument(id!);
             if (!localDoc) {
               toast.error("Document not found. Please upload the PDF again.");
@@ -87,12 +95,14 @@ export default function DocumentPage() {
             licenseKey: APRYSE_LICENSE,
             ...(docUrl ? { initialDoc: docUrl } : {}),
           },
-          viewerRef.current
+          viewerRef.current,
         );
 
         viewerInstanceRef.current = instance;
 
-        instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
+        instance.UI.setTheme(
+          isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT,
+        );
 
         const { documentViewer, annotationManager } = instance.Core;
 
@@ -128,7 +138,9 @@ export default function DocumentPage() {
     try {
       const ydoc = new Y.Doc();
 
-      const provider = new YProvider(PARTY_HOST, roomId, ydoc);
+      const provider = new YProvider(PARTY_HOST, roomId, ydoc, {
+        party: "room",
+      });
       providerRef.current = provider;
 
       const annotationsMap = ydoc.getMap<string>("annotations");
@@ -160,7 +172,11 @@ export default function DocumentPage() {
 
       annotationManager.addEventListener(
         "annotationChanged",
-        async (annotations: any[], action: string, { imported }: { imported: boolean }) => {
+        async (
+          annotations: any[],
+          action: string,
+          { imported }: { imported: boolean },
+        ) => {
           if (imported || isSyncing) return;
           try {
             for (const annotation of annotations) {
@@ -184,7 +200,7 @@ export default function DocumentPage() {
           } catch (e) {
             console.error("Failed to sync annotation:", e);
           }
-        }
+        },
       );
 
       const currentUser = getStoredUserName() || "Guest";
@@ -202,8 +218,14 @@ export default function DocumentPage() {
           if (clientId === localClientId) return;
           const user = state.user as Record<string, unknown> | undefined;
           if (!user) return;
-          const name = typeof user.name === "string" && user.name.trim() ? user.name.trim() : null;
-          const color = typeof user.color === "string" && user.color ? user.color : "#90A4AE";
+          const name =
+            typeof user.name === "string" && user.name.trim()
+              ? user.name.trim()
+              : null;
+          const color =
+            typeof user.color === "string" && user.color
+              ? user.color
+              : "#90A4AE";
           if (name) {
             others.push({ name, color });
           }
@@ -213,7 +235,11 @@ export default function DocumentPage() {
 
       provider.awareness.on("change", updateCollaborators);
 
-      const validStatuses = new Set<ConnectionStatus>(["connecting", "connected", "disconnected"]);
+      const validStatuses = new Set<ConnectionStatus>([
+        "connecting",
+        "connected",
+        "disconnected",
+      ]);
 
       function handleStatus({ status }: { status: string }) {
         console.log(`[y-partyserver] Status: ${status} — room: ${roomId}`);
@@ -252,7 +278,9 @@ export default function DocumentPage() {
   useEffect(() => {
     const instance = viewerInstanceRef.current;
     if (instance) {
-      instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
+      instance.UI.setTheme(
+        isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT,
+      );
     }
   }, [isDark]);
 
