@@ -159,12 +159,14 @@ export default function VideoPanel({
   if (isMobile) {
     return (
       <>
-        {mobileOpen && (
-          <div
-            className="fixed inset-0 bg-black/40 z-40"
-            onClick={onMobileClose}
-          />
-        )}
+        <div
+          className="fixed inset-0 bg-black/40 z-40 transition-opacity duration-300"
+          style={{
+            opacity: mobileOpen ? 1 : 0,
+            pointerEvents: mobileOpen ? "auto" : "none",
+          }}
+          onClick={onMobileClose}
+        />
         <div
           className={`fixed inset-x-0 bottom-0 z-50 bg-card border-t rounded-t-2xl shadow-lg transition-transform duration-300 ease-in-out ${
             mobileOpen ? "translate-y-0" : "translate-y-full"
@@ -232,8 +234,11 @@ export default function VideoPanel({
         onOpenChange={setSettingsOpen}
         onSave={onReplaceStream}
       />
-      {!collapsed && (
-        <div className="bg-card border-r flex flex-col w-64">
+      <div
+        className="bg-card border-r flex flex-col overflow-hidden transition-[width] duration-300 ease-in-out"
+        style={{ width: collapsed ? 0 : 256 }}
+      >
+        <div className="w-64 flex flex-col flex-1 min-h-0">
           <div className="p-3 border-b flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">Video</span>
             <div className="flex items-center gap-1">
@@ -276,7 +281,7 @@ export default function VideoPanel({
             connectionStatus={connectionStatus}
           />
         </div>
-      )}
+      </div>
 
       <button
         onClick={onToggleCollapse}
