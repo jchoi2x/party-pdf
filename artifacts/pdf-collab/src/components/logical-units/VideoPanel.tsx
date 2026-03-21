@@ -55,7 +55,7 @@ function VideoTile({ stream, label, muted, audioOutputId }: { stream: MediaStrea
         muted={muted}
         className="w-full h-full object-cover"
       />
-      <span className="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+      <span className="absolute bottom-1 left-1 text-2xs bg-black/60 text-white px-1.5 py-0.5 rounded">
         {label}
       </span>
     </div>

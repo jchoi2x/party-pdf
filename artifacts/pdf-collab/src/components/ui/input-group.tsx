@@ -35,14 +35,14 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 const inputGroupAddonVariants = cva(
-  "text-muted-foreground flex h-auto cursor-text select-none items-center justify-center gap-2 py-1.5 text-sm font-medium group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
+  "text-muted-foreground flex h-auto cursor-text select-none items-center justify-center gap-2 py-1.5 text-sm font-medium group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[--radius-inner] [&>svg:not([class*='size-'])]:size-4",
   {
     variants: {
       align: {
         "inline-start":
-          "order-first pl-3 has-[>button]:ml-[-0.45rem] has-[>kbd]:ml-[-0.35rem]",
+          "order-first pl-3 has-[>button]:ml-[--input-group-button-offset] has-[>kbd]:ml-[--input-group-kbd-offset]",
         "inline-end":
-          "order-last pr-3 has-[>button]:mr-[-0.4rem] has-[>kbd]:mr-[-0.35rem]",
+          "order-last pr-3 has-[>button]:mr-[--input-group-button-end-offset] has-[>kbd]:mr-[--input-group-kbd-offset]",
         "block-start":
           "[.border-b]:pb-3 order-first w-full justify-start px-3 pt-3 group-has-[>input]/input-group:pt-2.5",
         "block-end":
@@ -82,10 +82,10 @@ const inputGroupButtonVariants = cva(
   {
     variants: {
       size: {
-        xs: "h-6 gap-1 rounded-[calc(var(--radius)-5px)] px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
+        xs: "h-6 gap-1 rounded-[--radius-inner] px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
         sm: "h-8 gap-1.5 rounded-md px-2.5 has-[>svg]:px-2.5",
         "icon-xs":
-          "size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0",
+          "size-6 rounded-[--radius-inner] p-0 has-[>svg]:p-0",
         "icon-sm": "size-8 p-0 has-[>svg]:p-0",
       },
     },

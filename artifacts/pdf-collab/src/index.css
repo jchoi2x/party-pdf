@@ -4,7 +4,26 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 4px spacing grid: --spacing is 0.25rem (4px), so scale step n = n×4px.
+   Use Tailwind scale utilities wherever possible (e.g. w-px, w-0.5, min-w-32).
+   Values that cannot be expressed as multiples of 4px are defined here as
+   named design tokens and referenced via bracket syntax (e.g. ring-[--ring-focus]). */
 @theme inline {
+  /* Design tokens for non-grid values */
+  --radius-drawer: 10px;
+  --ring-focus: 3px;
+  --z-toast: 100;
+  --width-toast: 420px;
+  --text-2xs: 0.625rem;
+  --border-dashed-indicator: 1.5px;
+  --text-calendar-label: 0.8rem;
+  --radius-inner: calc(var(--radius) - 5px);
+  --sidebar-border-width: 1px;
+  --sidebar-icon-extra: 2px;
+  --input-group-button-offset: -0.45rem;
+  --input-group-kbd-offset: -0.35rem;
+  --input-group-button-end-offset: -0.4rem;
+  --translate-alert-icon-y: 3px;
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-border: hsl(var(--border));
