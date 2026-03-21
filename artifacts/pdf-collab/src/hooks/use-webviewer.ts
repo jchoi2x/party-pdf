@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
+import type {
+  Dispatch,
+  MutableRefObject,
+  RefObject,
+  SetStateAction,
+} from "react";
 import { toast } from "sonner";
 import WebViewer from "@pdftron/webviewer";
 import YProvider from "y-partyserver/provider";
@@ -14,13 +19,15 @@ const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
 const APRYSE_LICENSE =
   "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
 const WEBVIEWER_CDN =
-  "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@11.11.0/public";
+  "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@10.9.0-20240329/public";
 
 interface UseWebViewerOptions {
   id: string;
   isDark: boolean;
   viewerRef: RefObject<HTMLDivElement | null>;
-  viewerInstanceRef: MutableRefObject<Awaited<ReturnType<typeof WebViewer>> | null>;
+  viewerInstanceRef: MutableRefObject<Awaited<
+    ReturnType<typeof WebViewer>
+  > | null>;
   providerRef: MutableRefObject<InstanceType<typeof YProvider> | null>;
   cursorCleanupRef: MutableRefObject<(() => void) | null>;
   doUpdateCursorOverlay: () => void;
@@ -70,7 +77,10 @@ export function useWebViewer({
             docUrl = data.url;
             name = "Shared Document";
           } catch (cloudErr) {
-            console.warn("Cloud download failed, trying local fallback:", cloudErr);
+            console.warn(
+              "Cloud download failed, trying local fallback:",
+              cloudErr,
+            );
             const localDoc = await getDocument(id);
             if (!localDoc) {
               toast.error("Document not found. Please upload the PDF again.");
