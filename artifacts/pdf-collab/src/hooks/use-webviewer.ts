@@ -7,6 +7,7 @@ import type {
 } from "react";
 import { toast } from "sonner";
 import WebViewer from "@pdftron/webviewer";
+import { flatten } from "flat";
 import YProvider from "y-partyserver/provider";
 import { getDocument } from "@/lib/indexeddb";
 import { getStoredUserName } from "@/lib/username";
@@ -16,10 +17,15 @@ import { setupCursorTracking } from "@/lib/document/cursor-tracking";
 import type { ConnectionStatus, Collaborator } from "@/lib/document/types";
 
 const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
-const APRYSE_LICENSE =
-  "demo:1773251044163:637ef9590300000000e0776822862dfcea1362e5ec2c24eef968e7609f";
-const WEBVIEWER_CDN =
-  "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@10.9.0-20240329/public";
+const APRYSE_LICENSE = import.meta.env.APRYSE_LICENSE as string;
+const WEBVIEWER_CDN = import.meta.env.WEBVIEWER_CDN as string;
+
+if (!APRYSE_LICENSE) {
+  console.error("APRYSE_LICENSE environment variable is not set.");
+}
+if (!WEBVIEWER_CDN) {
+  console.error("WEBVIEWER_CDN environment variable is not set.");
+}
 
 interface UseWebViewerOptions {
   id: string;
@@ -108,6 +114,21 @@ export function useWebViewer({
 
         viewerInstanceRef.current = instance;
         (window as any).instance = instance;
+
+        try {
+          const englishResponse = await fetch(
+            "https://raw.githubusercontent.com/ApryseSDK/webviewer-ui/master/i18n/translation-en.json",
+          );
+          if (englishResponse.ok) {
+            const english = await englishResponse.json();
+            const flattenedEnglish = flatten(english) as {
+              [key: string]: string;
+            };
+            instance.UI.setTranslations("en", flattenedEnglish);
+          }
+        } catch (i18nErr) {
+          console.warn("Failed to load i18n translations:", i18nErr);
+        }
 
         instance.UI.disableElements(["toolbarGroup-Edit"]);
         instance.UI.setTheme(

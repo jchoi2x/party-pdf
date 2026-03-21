@@ -45,3 +45,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+WEBVIEWER_CDN = "https://cdn.jsdelivr.net/npm/@pdftron/webviewer@10.9.0-20240329/public"
