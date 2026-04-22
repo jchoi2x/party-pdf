@@ -2,7 +2,7 @@
   "compileOnSave": false,
   "files": [],
   "include": [
-    "src/**/*"
+    "src/frontend/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -46,7 +46,7 @@
     ],
     "paths": {
       "@/*": [
-        "./src/*"
+        "./src/frontend/*"
       ]
     }
   },
