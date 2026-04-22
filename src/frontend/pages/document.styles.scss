@@ -1,0 +1,15 @@
+.document-page {
+  @apply flex h-screen flex-col overflow-hidden bg-background;
+
+  &__main {
+    @apply flex flex-1 overflow-hidden;
+  }
+
+  &__viewer-shell {
+    @apply relative flex-1 overflow-hidden;
+  }
+
+  &__viewer {
+    @apply h-full w-full;
+  }
+}

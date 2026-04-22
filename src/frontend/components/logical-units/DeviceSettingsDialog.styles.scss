@@ -1,0 +1,39 @@
+.device-settings-dialog {
+  @apply max-w-md;
+
+  &__sections {
+    @apply space-y-5;
+  }
+
+  &__section {
+    @apply space-y-2;
+  }
+
+  &__label {
+    @apply text-sm font-medium;
+  }
+
+  &__hint {
+    @apply text-xs text-muted-foreground;
+  }
+
+  &__test-audio {
+    @apply w-full;
+  }
+
+  &__hidden-audio {
+    @apply hidden;
+  }
+
+  &__preview {
+    @apply aspect-video overflow-hidden rounded-lg bg-muted;
+  }
+
+  &__preview-video {
+    @apply h-full w-full object-cover;
+  }
+
+  &__preview-empty {
+    @apply flex h-full w-full items-center justify-center text-xs text-muted-foreground;
+  }
+}

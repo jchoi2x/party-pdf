@@ -1,0 +1,27 @@
+.not-found-page {
+  @apply min-h-screen w-full flex items-center justify-center bg-gray-50;
+
+  &__card {
+    @apply w-full max-w-md mx-4;
+  }
+
+  &__card-content {
+    @apply pt-6;
+  }
+
+  &__title-row {
+    @apply flex mb-4 gap-2;
+  }
+
+  &__icon {
+    @apply h-8 w-8 text-red-500;
+  }
+
+  &__title {
+    @apply text-2xl font-bold text-gray-900;
+  }
+
+  &__description {
+    @apply mt-4 text-sm text-gray-600;
+  }
+}

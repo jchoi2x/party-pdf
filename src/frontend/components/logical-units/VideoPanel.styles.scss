@@ -1,0 +1,124 @@
+.video-panel {
+  @apply relative flex shrink-0;
+
+  &__tile {
+    @apply relative aspect-video overflow-hidden rounded-lg bg-muted;
+  }
+
+  &__tile-video {
+    @apply h-full w-full object-cover;
+  }
+
+  &__tile-label {
+    @apply absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-2xs text-white;
+  }
+
+  &__placeholder {
+    @apply relative flex aspect-video flex-col items-center justify-center gap-1.5 overflow-hidden rounded-lg bg-muted;
+  }
+
+  &__placeholder-avatar {
+    @apply flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white;
+  }
+
+  &__placeholder-name {
+    @apply max-w-[90%] truncate text-xs text-muted-foreground;
+  }
+
+  &__content {
+    @apply flex-1 space-y-2 overflow-y-auto p-2;
+  }
+
+  &__tile-shell {
+    @apply relative;
+  }
+
+  &__connection-dot {
+    @apply absolute top-2 left-2 z-10 h-2.5 w-2.5 rounded-full ring-1 ring-black/20;
+
+    &--pulse {
+      @apply animate-pulse;
+    }
+
+    &--connecting {
+      @apply bg-yellow-400;
+    }
+
+    &--connected {
+      @apply bg-green-500;
+    }
+
+    &--disconnected {
+      @apply bg-red-500;
+    }
+  }
+
+  &__mobile-overlay {
+    @apply fixed inset-0 z-40 bg-black/40 transition-opacity duration-300;
+  }
+
+  &__mobile-sheet {
+    @apply fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t bg-card shadow-lg transition-transform duration-300 ease-in-out;
+
+    &--open {
+      @apply translate-y-0;
+    }
+
+    &--closed {
+      @apply translate-y-full;
+    }
+  }
+
+  &__mobile-grabber-wrap {
+    @apply flex justify-center pb-1 pt-2;
+  }
+
+  &__mobile-grabber {
+    @apply h-1 w-10 rounded-full bg-muted-foreground/30;
+  }
+
+  &__mobile-header {
+    @apply flex items-center justify-between px-3 pb-2;
+  }
+
+  &__mobile-actions {
+    @apply flex items-center gap-2;
+  }
+
+  &__mobile-content {
+    @apply overflow-y-auto;
+    max-height: calc(60vh - 80px);
+  }
+
+  &__rail {
+    @apply flex flex-col overflow-hidden border-r bg-card transition-[width] duration-300 ease-in-out;
+  }
+
+  &__rail-inner {
+    @apply flex min-h-0 w-64 flex-1 flex-col;
+  }
+
+  &__rail-header {
+    @apply flex items-center justify-between border-b p-3;
+  }
+
+  &__rail-actions {
+    @apply flex items-center gap-1;
+  }
+
+  &__title {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  &__icon-button {
+    @apply h-7 w-7;
+  }
+
+  &__camera-button {
+    @apply h-7 gap-1 text-xs;
+  }
+
+  &__collapse-button {
+    @apply flex w-5 items-center justify-center border-r bg-card transition-colors hover:bg-muted;
+  }
+}
