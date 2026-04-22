@@ -1,10 +1,10 @@
-import type { MutableRefObject, RefObject } from "react";
-import WebViewer from "@pdftron/webviewer";
-import type YProvider from "y-partyserver/provider";
-import type { CursorPosition, Collaborator } from "@/lib/document/types";
+import type WebViewer from '@pdftron/webviewer';
+import type { MutableRefObject, RefObject } from 'react';
+import type YProvider from 'y-partyserver/provider';
+import type { Collaborator, CursorPosition } from '@/lib/document/types';
 
 export function sanitizeColor(color: string): string {
-  return /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : "#90A4AE";
+  return /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : '#90A4AE';
 }
 
 export function setupCursorTracking(
@@ -21,7 +21,7 @@ export function setupCursorTracking(
   function broadcastCursor(cursor: CursorPosition | null) {
     const provider = providerRef.current;
     if (!provider) return;
-    provider.awareness.setLocalStateField("cursor", cursor);
+    provider.awareness.setLocalStateField('cursor', cursor);
   }
 
   // e.clientX/Y from documentViewer events are in the iframe's coordinate
@@ -71,27 +71,27 @@ export function setupCursorTracking(
   }
 
   // Apryse documentViewer mouseMove fires inside the iframe
-  documentViewer.addEventListener("mouseMove", handleMouseMove);
+  documentViewer.addEventListener('mouseMove', handleMouseMove);
 
   // Use native enter/leave on the outer web component element — the Apryse
   // mouseLeave event isn't reliable for detecting when the cursor exits the viewer
-  const webviewerEl = document.querySelector("apryse-webviewer");
-  webviewerEl?.addEventListener("mouseenter", handleMouseEnter);
-  webviewerEl?.addEventListener("mouseleave", handleMouseLeave);
+  const webviewerEl = document.querySelector('apryse-webviewer');
+  webviewerEl?.addEventListener('mouseenter', handleMouseEnter);
+  webviewerEl?.addEventListener('mouseleave', handleMouseLeave);
 
   const scrollElement = documentViewer.getScrollViewElement();
   function handleScrollOrZoom() {
     updateOverlayFn();
   }
-  scrollElement.addEventListener("scroll", handleScrollOrZoom);
-  documentViewer.addEventListener("zoomUpdated", handleScrollOrZoom);
+  scrollElement.addEventListener('scroll', handleScrollOrZoom);
+  documentViewer.addEventListener('zoomUpdated', handleScrollOrZoom);
 
   cursorCleanupRef.current = () => {
-    documentViewer.removeEventListener("mouseMove", handleMouseMove);
-    webviewerEl?.removeEventListener("mouseenter", handleMouseEnter);
-    webviewerEl?.removeEventListener("mouseleave", handleMouseLeave);
-    scrollElement.removeEventListener("scroll", handleScrollOrZoom);
-    documentViewer.removeEventListener("zoomUpdated", handleScrollOrZoom);
+    documentViewer.removeEventListener('mouseMove', handleMouseMove);
+    webviewerEl?.removeEventListener('mouseenter', handleMouseEnter);
+    webviewerEl?.removeEventListener('mouseleave', handleMouseLeave);
+    scrollElement.removeEventListener('scroll', handleScrollOrZoom);
+    documentViewer.removeEventListener('zoomUpdated', handleScrollOrZoom);
     broadcastCursor(null);
   };
 }
@@ -121,7 +121,7 @@ export function updateCursorOverlay(
 
       const scrollElement = documentViewer.getScrollViewElement();
       const scrollRect = scrollElement.getBoundingClientRect(); // iframe-relative
-      const iframeEl = document.querySelector("apryse-webviewer") as HTMLElement | null;
+      const iframeEl = document.querySelector('apryse-webviewer') as HTMLElement | null;
       if (!iframeEl) continue;
       const iframeRect = iframeEl.getBoundingClientRect(); // outer-window-relative
       const viewerContainer = viewerRef.current;
@@ -139,25 +139,25 @@ export function updateCursorOverlay(
 
       const safeColor = sanitizeColor(collab.color);
 
-      const wrapper = document.createElement("div");
+      const wrapper = document.createElement('div');
       wrapper.style.cssText = `position:absolute;left:${screenX}px;top:${screenY}px;pointer-events:none;z-index:50;transition:left 0.05s linear,top 0.05s linear;`;
 
-      const svgNs = "http://www.w3.org/2000/svg";
-      const svg = document.createElementNS(svgNs, "svg");
-      svg.setAttribute("width", "16");
-      svg.setAttribute("height", "20");
-      svg.setAttribute("viewBox", "0 0 16 20");
-      svg.setAttribute("fill", "none");
-      svg.style.filter = "drop-shadow(0 1px 2px rgba(0,0,0,0.3))";
-      const path = document.createElementNS(svgNs, "path");
-      path.setAttribute("d", "M0 0L16 12H6L4 20L0 0Z");
-      path.setAttribute("fill", safeColor);
-      path.setAttribute("stroke", "#fff");
-      path.setAttribute("stroke-width", "1");
+      const svgNs = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNs, 'svg');
+      svg.setAttribute('width', '16');
+      svg.setAttribute('height', '20');
+      svg.setAttribute('viewBox', '0 0 16 20');
+      svg.setAttribute('fill', 'none');
+      svg.style.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))';
+      const path = document.createElementNS(svgNs, 'path');
+      path.setAttribute('d', 'M0 0L16 12H6L4 20L0 0Z');
+      path.setAttribute('fill', safeColor);
+      path.setAttribute('stroke', '#fff');
+      path.setAttribute('stroke-width', '1');
       svg.appendChild(path);
       wrapper.appendChild(svg);
 
-      const label = document.createElement("span");
+      const label = document.createElement('span');
       label.textContent = collab.name;
       label.style.cssText = `position:absolute;left:14px;top:12px;background:${safeColor};color:#fff;font-size:11px;line-height:1;padding:2px 6px;border-radius:4px;white-space:nowrap;font-family:system-ui,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.2);`;
       wrapper.appendChild(label);

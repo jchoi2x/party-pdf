@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-const THEME_KEY = "theme";
+const THEME_KEY = 'theme';
 
 function getInitialDark(): boolean {
   const stored = localStorage.getItem(THEME_KEY);
-  return stored === "dark";
+  return stored === 'dark';
 }
 
 export function useTheme() {
@@ -13,11 +13,11 @@ export function useTheme() {
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
-      root.classList.add("dark");
+      root.classList.add('dark');
     } else {
-      root.classList.remove("dark");
+      root.classList.remove('dark');
     }
-    localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
   }, [isDark]);
 
   const toggleTheme = useCallback(() => {

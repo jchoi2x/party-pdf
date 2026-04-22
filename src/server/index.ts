@@ -1,7 +1,7 @@
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 const app = new Hono().basePath('/api');
 
-app.get("/ping", (c) => c.json({ message: "pong" }));
+app.get('/ping', (c) => c.json({ message: 'pong' }));
 
 export default app;

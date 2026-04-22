@@ -1,4 +1,4 @@
-export type ConnectionStatus = "connecting" | "connected" | "disconnected";
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
 export interface CursorPosition {
   pageNumber: number;

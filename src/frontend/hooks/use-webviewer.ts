@@ -1,41 +1,33 @@
-import { useEffect, useRef, useState } from "react";
-import type {
-  Dispatch,
-  MutableRefObject,
-  RefObject,
-  SetStateAction,
-} from "react";
-import { toast } from "sonner";
-import WebViewer from "@pdftron/webviewer";
-import { flatten } from "flat";
-import YProvider from "y-partyserver/provider";
-import { getDocument } from "@/lib/indexeddb";
-import { getStoredUserName } from "@/lib/username";
-import { applyWebViewerTheme } from "@/lib/document/theme";
-import { setupYjsCollaboration } from "@/lib/document/collaboration";
-import { setupCursorTracking } from "@/lib/document/cursor-tracking";
-import type { ConnectionStatus, Collaborator } from "@/lib/document/types";
-import translateEn from "@/constants/webviewer/translate-en.json";
-import { id } from "date-fns/locale";
+import WebViewer from '@pdftron/webviewer';
+import { flatten } from 'flat';
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import type YProvider from 'y-partyserver/provider';
+import translateEn from '@/constants/webviewer/translate-en.json';
+import { setupYjsCollaboration } from '@/lib/document/collaboration';
+import { setupCursorTracking } from '@/lib/document/cursor-tracking';
+import { applyWebViewerTheme } from '@/lib/document/theme';
+import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
+import { getDocument } from '@/lib/indexeddb';
+import { getStoredUserName } from '@/lib/username';
 
-const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
+const API_BASE = 'https://oblockparty.xvzf.workers.dev/api';
 const APRYSE_LICENSE = import.meta.env.APRYSE_LICENSE as string;
 const WEBVIEWER_CDN = import.meta.env.WEBVIEWER_CDN as string;
 
 if (!APRYSE_LICENSE) {
-  console.error("APRYSE_LICENSE environment variable is not set.");
+  console.error('APRYSE_LICENSE environment variable is not set.');
 }
 if (!WEBVIEWER_CDN) {
-  console.error("WEBVIEWER_CDN environment variable is not set.");
+  console.error('WEBVIEWER_CDN environment variable is not set.');
 }
 
 interface UseWebViewerOptions {
   id: string;
   isDark: boolean;
   viewerRef: RefObject<HTMLDivElement | null>;
-  viewerInstanceRef: MutableRefObject<Awaited<
-    ReturnType<typeof WebViewer>
-  > | null>;
+  viewerInstanceRef: MutableRefObject<Awaited<ReturnType<typeof WebViewer>> | null>;
   providerRef: MutableRefObject<InstanceType<typeof YProvider> | null>;
   cursorCleanupRef: MutableRefObject<(() => void) | null>;
   doUpdateCursorOverlay: () => void;
@@ -57,12 +49,12 @@ export function useWebViewer({
   navigate,
 }: UseWebViewerOptions) {
   const viewerInitialized = useRef(false);
-  const [docName, setDocName] = useState("");
+  const [docName, setDocName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!id) {
-      navigate("/");
+      navigate('/');
       return;
     }
 
@@ -70,7 +62,7 @@ export function useWebViewer({
       try {
         let docUrl: string | null = null;
         let localBlob: Blob | null = null;
-        let name = "";
+        let name = '';
 
         const cached = sessionStorage.getItem(id);
         if (cached) {
@@ -80,19 +72,16 @@ export function useWebViewer({
         } else {
           try {
             const res = await fetch(`${API_BASE}/download-url/${id}`);
-            if (!res.ok) throw new Error("Failed to fetch download URL");
+            if (!res.ok) throw new Error('Failed to fetch download URL');
             const data = await res.json();
             docUrl = data.url;
-            name = "Shared Document";
+            name = 'Shared Document';
           } catch (cloudErr) {
-            console.warn(
-              "Cloud download failed, trying local fallback:",
-              cloudErr,
-            );
+            console.warn('Cloud download failed, trying local fallback:', cloudErr);
             const localDoc = await getDocument(id);
             if (!localDoc) {
-              toast.error("Document not found. Please upload the PDF again.");
-              navigate("/");
+              toast.error('Document not found. Please upload the PDF again.');
+              navigate('/');
               return;
             }
             localBlob = localDoc.blob;
@@ -115,6 +104,7 @@ export function useWebViewer({
         );
 
         viewerInstanceRef.current = instance;
+        // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
         (window as any).instance = instance;
 
         try {
@@ -122,45 +112,30 @@ export function useWebViewer({
           const flattenedEnglish = flatten(english) as {
             [key: string]: string;
           };
-          instance.UI.setTranslations("en", flattenedEnglish);
+          instance.UI.setTranslations('en', flattenedEnglish);
         } catch (i18nErr) {
-          console.warn("Failed to load i18n translations:", i18nErr);
+          console.warn('Failed to load i18n translations:', i18nErr);
         }
 
-        instance.UI.disableElements(["toolbarGroup-Edit"]);
-        instance.UI.setTheme(
-          isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT,
-        );
-        instance.UI.addEventListener("viewerLoaded", () =>
-          applyWebViewerTheme(instance, isDark),
-        );
+        instance.UI.disableElements(['toolbarGroup-Edit']);
+        instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
+        instance.UI.addEventListener('viewerLoaded', () => applyWebViewerTheme(instance, isDark));
 
         const { documentViewer, annotationManager } = instance.Core;
-        annotationManager.setCurrentUser(getStoredUserName() || "Guest");
+        annotationManager.setCurrentUser(getStoredUserName() || 'Guest');
 
-        documentViewer.addEventListener("documentLoaded", () => {
+        documentViewer.addEventListener('documentLoaded', () => {
           setIsLoading(false);
-          setupYjsCollaboration(
-            annotationManager,
-            id,
-            providerRef,
-            setCollaborators,
-            setConnectionStatus,
-          );
-          setupCursorTracking(
-            instance,
-            providerRef,
-            cursorCleanupRef,
-            doUpdateCursorOverlay,
-          );
+          setupYjsCollaboration(annotationManager, id, providerRef, setCollaborators, setConnectionStatus);
+          setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
         });
 
         if (localBlob) {
           instance.UI.loadDocument(localBlob, { filename: name });
         }
       } catch (err) {
-        console.error("WebViewer initialization failed:", err);
-        toast.error("Failed to load document. Please try again.");
+        console.error('WebViewer initialization failed:', err);
+        toast.error('Failed to load document. Please try again.');
         setIsLoading(false);
       }
     }
@@ -182,9 +157,7 @@ export function useWebViewer({
   useEffect(() => {
     const instance = viewerInstanceRef.current;
     if (instance) {
-      instance.UI.setTheme(
-        isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT,
-      );
+      instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
       applyWebViewerTheme(instance, isDark);
     }
   }, [isDark]);

@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import type { RefObject } from 'react';
 
 interface CursorOverlayProps {
   overlayRef: RefObject<HTMLDivElement | null>;
@@ -9,10 +9,10 @@ export default function CursorOverlay({ overlayRef }: CursorOverlayProps) {
     <div
       ref={overlayRef}
       style={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
-        pointerEvents: "none",
-        overflow: "hidden",
+        pointerEvents: 'none',
+        overflow: 'hidden',
         zIndex: 40,
       }}
     />

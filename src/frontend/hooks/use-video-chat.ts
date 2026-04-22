@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import type { MutableRefObject } from "react";
-import { toast } from "sonner";
-import YProvider from "y-partyserver/provider";
-import { useWebRTC } from "@/hooks/use-webrtc";
-import { getStoredDevicePreferences } from "@/hooks/use-media-devices";
-import { getUserColor } from "@/lib/username";
-import type { Collaborator } from "@/lib/document/types";
+import type { MutableRefObject } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import type YProvider from 'y-partyserver/provider';
+import { getStoredDevicePreferences } from '@/hooks/use-media-devices';
+import { useWebRTC } from '@/hooks/use-webrtc';
+import type { Collaborator } from '@/lib/document/types';
+import { getUserColor } from '@/lib/username';
 
 interface UseVideoChatOptions {
   id: string;
@@ -14,32 +14,25 @@ interface UseVideoChatOptions {
   userName: string | null;
 }
 
-export function useVideoChat({
-  id,
-  providerRef,
-  collaborators,
-  userName,
-}: UseVideoChatOptions) {
+export function useVideoChat({ id, providerRef, collaborators, userName }: UseVideoChatOptions) {
   const [cameraOn, setCameraOn] = useState(false);
   const [videoPanelCollapsed, setVideoPanelCollapsed] = useState(false);
   const [signalConnected, setSignalConnected] = useState(false);
   const [mobileVideoOpen, setMobileVideoOpen] = useState(false);
-  const [audioOutputId, setAudioOutputId] = useState(
-    () => getStoredDevicePreferences().audioOutput || "",
-  );
+  const [audioOutputId, setAudioOutputId] = useState(() => getStoredDevicePreferences().audioOutput || '');
 
-  const { localStream, remoteStreams, startCamera, stopCamera, replaceLocalStream, localPeerId } =
-    useWebRTC(id, signalConnected);
+  const { localStream, remoteStreams, startCamera, stopCamera, replaceLocalStream, localPeerId } = useWebRTC(
+    id,
+    signalConnected,
+  );
 
   // Propagate the WebRTC peer ID into Yjs awareness so collaborators can
   // associate video streams with the right user.
   useEffect(() => {
     if (!providerRef.current || !localPeerId) return;
-    const user = providerRef.current.awareness.getLocalState()?.user as
-      | Record<string, unknown>
-      | undefined;
+    const user = providerRef.current.awareness.getLocalState()?.user as Record<string, unknown> | undefined;
     if (user) {
-      providerRef.current.awareness.setLocalStateField("user", {
+      providerRef.current.awareness.setLocalStateField('user', {
         ...user,
         peerId: localPeerId,
       });
@@ -60,7 +53,7 @@ export function useVideoChat({
       if (success) {
         setCameraOn(true);
       } else {
-        toast.error("Could not access camera. Check permissions and try again.");
+        toast.error('Could not access camera. Check permissions and try again.');
       }
     }
   }, [cameraOn, startCamera, stopCamera]);
@@ -82,7 +75,7 @@ export function useVideoChat({
     cameraOn,
     onToggleCamera: handleToggleCamera,
     collaborators,
-    localUser: { name: userName || "You", color: getUserColor() },
+    localUser: { name: userName || 'You', color: getUserColor() },
     onReplaceStream: handleReplaceStream,
     audioOutputId,
   };

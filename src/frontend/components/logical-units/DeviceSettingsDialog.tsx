@@ -1,28 +1,18 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  useMediaDevices,
-  getStoredDevicePreferences,
-  setStoredDevicePreferences,
-} from "@/hooks/use-media-devices";
-import MicLevelBar from "./MicLevelBar";
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getStoredDevicePreferences, setStoredDevicePreferences, useMediaDevices } from '@/hooks/use-media-devices';
+import MicLevelBar from './MicLevelBar';
 
 interface DeviceSettingsDialogProps {
   open: boolean;
@@ -30,26 +20,18 @@ interface DeviceSettingsDialogProps {
   onSave: (stream: MediaStream, audioOutputId: string) => void;
 }
 
-const supportsSetSinkId =
-  typeof HTMLAudioElement !== "undefined" &&
-  "setSinkId" in HTMLAudioElement.prototype;
+const supportsSetSinkId = typeof HTMLAudioElement !== 'undefined' && 'setSinkId' in HTMLAudioElement.prototype;
 
-export default function DeviceSettingsDialog({
-  open,
-  onOpenChange,
-  onSave,
-}: DeviceSettingsDialogProps) {
+export default function DeviceSettingsDialog({ open, onOpenChange, onSave }: DeviceSettingsDialogProps) {
   const { audioInputs, audioOutputs, videoInputs, refresh } = useMediaDevices();
   const prefs = getStoredDevicePreferences();
 
-  const [selectedMic, setSelectedMic] = useState(prefs.audioInput || "");
-  const [selectedOutput, setSelectedOutput] = useState(prefs.audioOutput || "");
-  const [selectedCamera, setSelectedCamera] = useState(prefs.videoInput || "");
+  const [selectedMic, setSelectedMic] = useState(prefs.audioInput || '');
+  const [selectedOutput, setSelectedOutput] = useState(prefs.audioOutput || '');
+  const [selectedCamera, setSelectedCamera] = useState(prefs.videoInput || '');
 
-  const [previewAudioStream, setPreviewAudioStream] =
-    useState<MediaStream | null>(null);
-  const [previewVideoStream, setPreviewVideoStream] =
-    useState<MediaStream | null>(null);
+  const [previewAudioStream, setPreviewAudioStream] = useState<MediaStream | null>(null);
+  const [previewVideoStream, setPreviewVideoStream] = useState<MediaStream | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const testAudioRef = useRef<HTMLAudioElement>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
@@ -189,7 +171,7 @@ export default function DeviceSettingsDialog({
       audioCtxRef.current = ctx;
       const dest = ctx.createMediaStreamDestination();
       const oscillator = ctx.createOscillator();
-      oscillator.type = "sine";
+      oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(440, ctx.currentTime);
 
       const gain = ctx.createGain();
@@ -202,7 +184,7 @@ export default function DeviceSettingsDialog({
       if (testAudioRef.current) {
         testAudioRef.current.srcObject = dest.stream;
         if (supportsSetSinkId && selectedOutput) {
-          (testAudioRef.current as any).setSinkId(selectedOutput).catch(() => {});
+          (testAudioRef.current as HTMLAudioElement).setSinkId(selectedOutput).catch(() => {});
         }
         testAudioRef.current.play().catch(() => {
           gain.connect(ctx.destination);
@@ -219,7 +201,7 @@ export default function DeviceSettingsDialog({
         stopTestTone();
       };
     } catch {
-      toast.error("Could not play test tone");
+      toast.error('Could not play test tone');
     }
   }
 
@@ -232,19 +214,16 @@ export default function DeviceSettingsDialog({
 
     try {
       const constraints: MediaStreamConstraints = {
-        video: selectedCamera
-          ? { deviceId: { exact: selectedCamera } }
-          : true,
+        video: selectedCamera ? { deviceId: { exact: selectedCamera } } : true,
         audio: selectedMic ? { deviceId: { exact: selectedMic } } : true,
       };
-      const newStream =
-        await navigator.mediaDevices.getUserMedia(constraints);
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
 
       cleanupAll();
       onSave(newStream, selectedOutput);
       onOpenChange(false);
     } catch {
-      toast.error("Could not access selected devices. Check permissions.");
+      toast.error('Could not access selected devices. Check permissions.');
     }
   }
 
@@ -256,20 +235,18 @@ export default function DeviceSettingsDialog({
         else onOpenChange(val);
       }}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent className='max-w-md'>
         <DialogHeader>
           <DialogTitle>Device Settings</DialogTitle>
-          <DialogDescription>
-            Choose your microphone, speaker, and camera
-          </DialogDescription>
+          <DialogDescription>Choose your microphone, speaker, and camera</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Microphone</Label>
+        <div className='space-y-5'>
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium'>Microphone</Label>
             <Select value={selectedMic} onValueChange={setSelectedMic}>
               <SelectTrigger>
-                <SelectValue placeholder="Select microphone" />
+                <SelectValue placeholder='Select microphone' />
               </SelectTrigger>
               <SelectContent>
                 {audioInputs.map((d) => (
@@ -282,15 +259,12 @@ export default function DeviceSettingsDialog({
             <MicLevelBar stream={previewAudioStream} />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Audio Output</Label>
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium'>Audio Output</Label>
             {supportsSetSinkId ? (
-              <Select
-                value={selectedOutput}
-                onValueChange={setSelectedOutput}
-              >
+              <Select value={selectedOutput} onValueChange={setSelectedOutput}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select audio output" />
+                  <SelectValue placeholder='Select audio output' />
                 </SelectTrigger>
                 <SelectContent>
                   {audioOutputs.map((d) => (
@@ -301,29 +275,19 @@ export default function DeviceSettingsDialog({
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-xs text-muted-foreground">
-                Audio output selection is not supported in this browser.
-              </p>
+              <p className='text-xs text-muted-foreground'>Audio output selection is not supported in this browser.</p>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTestAudio}
-              className="w-full"
-            >
+            <Button variant='outline' size='sm' onClick={handleTestAudio} className='w-full'>
               Test Audio
             </Button>
-            <audio ref={testAudioRef} className="hidden" />
+            <audio ref={testAudioRef} className='hidden' />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Camera</Label>
-            <Select
-              value={selectedCamera}
-              onValueChange={setSelectedCamera}
-            >
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium'>Camera</Label>
+            <Select value={selectedCamera} onValueChange={setSelectedCamera}>
               <SelectTrigger>
-                <SelectValue placeholder="Select camera" />
+                <SelectValue placeholder='Select camera' />
               </SelectTrigger>
               <SelectContent>
                 {videoInputs.map((d) => (
@@ -333,17 +297,11 @@ export default function DeviceSettingsDialog({
                 ))}
               </SelectContent>
             </Select>
-            <div className="rounded-lg overflow-hidden bg-muted aspect-video">
+            <div className='rounded-lg overflow-hidden bg-muted aspect-video'>
               {previewVideoStream ? (
-                <video
-                  ref={videoPreviewRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
+                <video ref={videoPreviewRef} autoPlay playsInline muted className='w-full h-full object-cover' />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                <div className='w-full h-full flex items-center justify-center text-xs text-muted-foreground'>
                   No preview
                 </div>
               )}
@@ -352,7 +310,7 @@ export default function DeviceSettingsDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={handleClose}>
+          <Button variant='ghost' onClick={handleClose}>
             Cancel
           </Button>
           <Button onClick={handleSave}>Save</Button>

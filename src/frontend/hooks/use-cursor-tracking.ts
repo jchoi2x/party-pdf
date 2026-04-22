@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
-import type { MutableRefObject, RefObject } from "react";
-import WebViewer from "@pdftron/webviewer";
-import { updateCursorOverlay } from "@/lib/document/cursor-tracking";
-import type { Collaborator } from "@/lib/document/types";
+import type WebViewer from '@pdftron/webviewer';
+import type { MutableRefObject, RefObject } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { updateCursorOverlay } from '@/lib/document/cursor-tracking';
+import type { Collaborator } from '@/lib/document/types';
 
 export function useCursorTracking(
   collaborators: Collaborator[],

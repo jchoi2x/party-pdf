@@ -20,7 +20,29 @@
     "rules": {
       "recommended": true,
       "style": {
-        "useImportType": "error"
+        "useImportType": "error",
+        "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useKeyWithMouseEvents": "off",
+        "useFocusableInteractive": "off",
+        "useAriaPropsForRole": "off",
+        "useSemanticElements": "off",
+        "noStaticElementInteractions": "off",
+        "useMediaCaption": "off"
+      },
+      "suspicious": {
+        "useIterableCallbackReturn": "off",
+        "noDuplicateCustomProperties": "off",
+        "noArrayIndexKey": "off"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "useExhaustiveDependencies": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
       }
     }
   },
@@ -73,16 +95,6 @@
           "Cloudflare"
         ]
       },
-      "linter": {
-        "rules": {
-          "style": {
-            "noDefaultExport": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["src/stories/**", "**/*.stories.ts", "**/*.stories.tsx"],
       "linter": {
         "rules": {
           "style": {

@@ -9,6 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "storybook": "storybook dev -p 6006",
+    "cf-typegen": "wrangler types",
     "build-storybook": "storybook build",
     "biome:check": "biome check --write --no-errors-on-unmatched ./src",
     "biome:lint": "biome lint --no-errors-on-unmatched ./src",

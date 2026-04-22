@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 interface MicLevelBarProps {
   stream: MediaStream | null;
@@ -50,9 +50,9 @@ export default function MicLevelBar({ stream }: MicLevelBarProps) {
   }, [stream]);
 
   return (
-    <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+    <div className='w-full h-3 bg-muted rounded-full overflow-hidden'>
       <div
-        className="h-full bg-green-500 rounded-full transition-[width] duration-75"
+        className='h-full bg-green-500 rounded-full transition-[width] duration-75'
         style={{ width: `${level * 100}%` }}
       />
     </div>

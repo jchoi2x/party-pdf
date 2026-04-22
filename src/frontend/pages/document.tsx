@@ -1,21 +1,22 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams, useLocation } from "wouter";
-import WebViewer from "@pdftron/webviewer";
-import YProvider from "y-partyserver/provider";
-import { getStoredUserName, getUserColor } from "@/lib/username";
-import { useTheme } from "@/lib/theme";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useWebViewer } from "@/hooks/use-webviewer";
-import { useCursorTracking } from "@/hooks/use-cursor-tracking";
-import { useVideoChat } from "@/hooks/use-video-chat";
-import NameDialog from "@/components/logical-units/NameDialog";
-import DocumentHeader from "@/components/logical-units/DocumentHeader";
-import VideoPanel from "@/components/logical-units/VideoPanel";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
-import ConnectionModal from "@/components/logical-units/ConnectionModal";
-import CursorOverlay from "@/components/logical-units/CursorOverlay";
-import type { ConnectionStatus, Collaborator } from "@/lib/document/types";
-export type { ConnectionStatus, CursorPosition, Collaborator } from "@/lib/document/types";
+import type WebViewer from '@pdftron/webviewer';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useParams } from 'wouter';
+import type YProvider from 'y-partyserver/provider';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import ConnectionModal from '@/components/logical-units/ConnectionModal';
+import CursorOverlay from '@/components/logical-units/CursorOverlay';
+import DocumentHeader from '@/components/logical-units/DocumentHeader';
+import NameDialog from '@/components/logical-units/NameDialog';
+import VideoPanel from '@/components/logical-units/VideoPanel';
+import { useCursorTracking } from '@/hooks/use-cursor-tracking';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useVideoChat } from '@/hooks/use-video-chat';
+import { useWebViewer } from '@/hooks/use-webviewer';
+import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
+import { useTheme } from '@/lib/theme';
+import { getStoredUserName, getUserColor } from '@/lib/username';
+
+export type { Collaborator, ConnectionStatus, CursorPosition } from '@/lib/document/types';
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ export default function DocumentPage() {
 
   const [userName, setUserName] = useState<string | null>(getStoredUserName());
   const [showNameDialog, setShowNameDialog] = useState(!getStoredUserName());
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [showConnectingModal, setShowConnectingModal] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
 
@@ -64,7 +65,7 @@ export default function DocumentPage() {
   // Show "slow connection" modal only after a 4 s grace period so fast
   // connects never flash it. Disconnections are rendered immediately.
   useEffect(() => {
-    if (isLoading || connectionStatus !== "connecting") {
+    if (isLoading || connectionStatus !== 'connecting') {
       setShowConnectingModal(false);
       return;
     }
@@ -74,10 +75,8 @@ export default function DocumentPage() {
 
   function updateAwareness(name: string) {
     if (providerRef.current) {
-      const existing = providerRef.current.awareness.getLocalState()?.user as
-        | Record<string, unknown>
-        | undefined;
-      providerRef.current.awareness.setLocalStateField("user", {
+      const existing = providerRef.current.awareness.getLocalState()?.user as Record<string, unknown> | undefined;
+      providerRef.current.awareness.setLocalStateField('user', {
         ...existing,
         name,
         color: getUserColor(),
@@ -100,13 +99,13 @@ export default function DocumentPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className='flex flex-col h-screen bg-background overflow-hidden'>
       <NameDialog open={showNameDialog} onSave={handleNameSave} />
 
       {!showNameDialog && (
         <DocumentHeader
-          documentName={docName || "Loading..."}
-          userName={userName || ""}
+          documentName={docName || 'Loading...'}
+          userName={userName || ''}
           onUserNameChange={handleUserNameChange}
           isDark={isDark}
           onToggleTheme={toggleTheme}
@@ -116,7 +115,7 @@ export default function DocumentPage() {
         />
       )}
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className='flex-1 flex overflow-hidden'>
         {!isMobile && (
           <VideoPanel
             {...videoPanelSharedProps}
@@ -126,13 +125,11 @@ export default function DocumentPage() {
           />
         )}
 
-        <div className="flex-1 relative overflow-hidden">
-          {isLoading && <LoadingSpinner message="Loading document..." />}
-          {showConnectingModal && <ConnectionModal type="connecting" />}
-          {!isLoading && connectionStatus === "disconnected" && (
-            <ConnectionModal type="disconnected" />
-          )}
-          <div ref={viewerRef} className="w-full h-full" />
+        <div className='flex-1 relative overflow-hidden'>
+          {isLoading && <LoadingSpinner message='Loading document...' />}
+          {showConnectingModal && <ConnectionModal type='connecting' />}
+          {!isLoading && connectionStatus === 'disconnected' && <ConnectionModal type='disconnected' />}
+          <div ref={viewerRef} className='w-full h-full' />
           <CursorOverlay overlayRef={overlayRef} />
         </div>
       </div>
