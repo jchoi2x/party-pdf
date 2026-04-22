@@ -102,6 +102,7 @@ export function useWebViewer({
           },
           viewerRef.current,
         );
+        (window as any).instance = instance;
 
         viewerInstanceRef.current = instance;
         // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
