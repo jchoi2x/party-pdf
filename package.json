@@ -7,7 +7,13 @@
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "biome:check": "biome check --write --no-errors-on-unmatched ./src",
+    "biome:lint": "biome lint --no-errors-on-unmatched ./src",
+    "biome:format": "biome format --write --no-errors-on-unmatched ./src",
+    "biome:ci": "biome ci ./src"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -72,11 +78,18 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.12",
+    "@chromatic-com/storybook": "^5.1.2",
     "@cloudflare/vite-plugin": "^1.33.1",
     "@eslint/js": "^9.39.4",
     "@replit/vite-plugin-cartographer": "^0.5.0",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.6",
+    "@storybook/addon-a11y": "^10.3.5",
+    "@storybook/addon-docs": "^10.3.5",
+    "@storybook/addon-onboarding": "^10.3.5",
+    "@storybook/addon-vitest": "^10.3.5",
+    "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "^4.1.14",
     "@types/flat": "^5.0.5",
@@ -85,18 +98,29 @@
     "@types/react-dom": "^19.2.0",
     "@typescript/native-preview": "^7.0.0-dev.20260421.2",
     "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/browser-playwright": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-import-newlines": "^1.4.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "eslint-plugin-storybook": "^10.3.5",
     "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.4.0",
+    "playwright": "^1.59.1",
     "sass": "^1.86.3",
+    "storybook": "^10.3.5",
     "tailwindcss": "^4.1.14",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^7.3.0",
+    "vitest": "^4.1.5",
     "wrangler": "^4.84.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "plugin:storybook/recommended"
+    ]
   }
 }

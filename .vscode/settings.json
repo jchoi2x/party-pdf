@@ -11,4 +11,10 @@
     "**/.wrangler": true
   },
   "typescript.experimental.useTsgo": true,
+  "json.schemaDownload.enable": true,
+  "eslint.enable": false,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit",
+    "source.fixAll.biome": "explicit"
+  }
 }
