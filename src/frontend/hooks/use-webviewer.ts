@@ -113,6 +113,7 @@ export function useWebViewer({
           },
           viewerRef.current,
         );
+        (window as any).instance = instance;
 
         viewerInstanceRef.current = instance;
         (window as any).instance = instance;
