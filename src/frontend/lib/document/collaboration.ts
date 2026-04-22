@@ -16,7 +16,7 @@ export function setupYjsCollaboration(
   try {
     const ydoc = new Y.Doc();
 
-    const provider = new YProvider(PARTY_HOST, roomId, ydoc, {
+    const provider = new YProvider('http://localhost:3000/api/parties', roomId, ydoc, {
       party: "room",
     });
     providerRef.current = provider;

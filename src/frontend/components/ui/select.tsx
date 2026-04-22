@@ -64,8 +64,6 @@ const SelectScrollDownButton = forwardRef<
     <ChevronDown className="h-4 w-4" />
   </SelectPrimitive.ScrollDownButton>
 ))
-SelectSelectPrimitive.ScrollDownButton.displayName =
-  SelectPrimitive.ScrollDownButton.displayName
 
 const SelectContent = forwardRef<
   ElementRef<typeof SelectPrimitive.Content>,
