@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --config vite.config.ts",
+    "build": "tsc -b && vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "storybook": "storybook dev -p 6006",
+    "deploy": "bun run build && wrangler deploy --minify",
     "cf-typegen": "wrangler types",
     "build-storybook": "storybook build",
     "biome:check": "biome check --write --no-errors-on-unmatched ./src",
