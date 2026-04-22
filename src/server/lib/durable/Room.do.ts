@@ -1,20 +1,16 @@
-import type { Connection,ConnectionContext } from 'partyserver';
+import type { Connection, ConnectionContext } from 'partyserver';
 import { YServer } from 'y-partyserver';
-import { encodeStateAsUpdate, applyUpdate } from 'yjs';
+import { applyUpdate, encodeStateAsUpdate } from 'yjs';
 
 export class Room extends YServer {
   static options = {
     hibernate: true,
-  }
-  static callbackOptions = { 
+  };
+  static callbackOptions = {
     debounceWait: 2000,
     debounceMaxWait: 10000,
-    timeout: 5000
-  }
-
-  constructor(state: DurableObjectState, env: Env) {
-    super(state, env);
-  }
+    timeout: 5000,
+  };
 
   onConnect(connection: Connection, ctx: ConnectionContext) {
     return super.onConnect(connection, ctx);
@@ -28,7 +24,7 @@ export class Room extends YServer {
     this.ctx.waitUntil(this.ctx.storage.put('document', update));
   }
 
-  async onLoad(){
+  async onLoad() {
     console.debug('onLoad called');
     const document = await this.ctx.storage.get('document');
     if (document) {

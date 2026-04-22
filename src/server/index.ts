@@ -23,4 +23,4 @@ app.get('/parties/parties/room/:id', async (c) => {
 showRoutes(app);
 
 export default app;
-export * from './lib/durable'
+export { Room } from './lib/durable'
