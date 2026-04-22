@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { showRoutes } from "hono/dev";
 import { logger } from "hono/logger";
 import { getServerByName } from "partyserver";
+import { withSentry } from "./lib/sentry";
 
 const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
@@ -22,5 +23,5 @@ app.get('/parties/parties/room/:id', async (c) => {
 
 showRoutes(app);
 
-export default app;
+export default withSentry(app);
 export { Room } from './lib/durable'
