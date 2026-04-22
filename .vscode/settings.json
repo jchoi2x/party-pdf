@@ -5,11 +5,10 @@
     "**/.hg": true,
     "**/.DS_Store": true,
     "**/.idea": true,
-    "**/.cursor": true,
-    "**/.github": true,
     "**/.replit": true,
     "**/node_modules": true,
     "**/dist": true,
     "**/.wrangler": true
-  }
+  },
+  "typescript.experimental.useTsgo": true,
 }

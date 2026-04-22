@@ -1,0 +1,58 @@
+---
+description: Enforce TS/TSX component boundaries and import style
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TSX Component Boundaries
+
+- Keep each `*.tsx` file focused on one exported React component (the primary component for that file).
+- If you find additional component declarations in the same file, extract them.
+
+## Additional React components
+
+When a TSX file has more than one React component declaration:
+
+1. Decide if the extra component is a reusable UI primitive or a logical standalone unit.
+2. Move it to the most appropriate directory:
+   - Shared/reusable UI: a shared component folder (for example `src/frontend/components/...`).
+   - Route- or feature-specific UI: a colocated feature folder next to the parent component.
+3. Create a dedicated directory/files for the extracted component as needed (component file, styles, and index barrel if that area uses barrels).
+4. Update imports/exports and preserve behavior.
+
+## Top-level function declarations in TSX
+
+When a TSX file has top-level `function` declarations:
+
+1. Determine whether each function is a helper specific to that component.
+2. If component-specific, move it into a `helpers` directory next to that component (for example `Component/helpers/<name>.ts`).
+3. If not component-specific, move it to the appropriate shared location for the project domain (for example shared utils/services).
+4. Import the moved function back into the component and keep function signatures/types explicit.
+
+## Disallowed component patterns
+
+- Do not create or use `*.parts.tsx` files.
+- Do not create one-line component re-export stubs such as `export { X } from "./Foo.shared"` or `export { X } from "./Foo.parts"` in `*.component.tsx` files.
+- Each `*.component.tsx` file must contain the actual implementation of its exported component.
+- If a hook is tightly coupled to a component (only meaningful for that component), place it in a colocated `use-<name>.ts` file next to the component and import it from there.
+- If TypeScript types/interfaces are shared across files in the same component area, define them in a colocated `types.ts` file next to the component and import from that file.
+- Prefer these colocated files over `*.shared.ts`/`*.shared.tsx` for component-local hooks and types.
+
+## React import style (all TS/TSX files)
+
+- Do not use namespace React imports in TS/TSX files: `import * as React from "react"`.
+- Import only the symbols used in the file from `react` (for example `useState`, `forwardRef`, `useMemo`, `type ReactNode`).
+- Hook and API usage must reference direct imports (for example `useState(...)`, not `React.useState(...)`).
+- For types, prefer named type imports from `react` (for example `import type { ReactNode } from "react"`), rather than `React.ReactNode`.
+
+## Import style (all TS/TSX files)
+
+- Do not use namespace imports in TS/TSX files (for example `import * as ToastPrimitives from "@radix-ui/react-toast"`).
+- Import only the specific values/types used by the file via named imports.
+- Usage must reference directly imported bindings (for example `Root`, `Portal`, `Trigger`) rather than namespace member access (for example `ToastPrimitives.Root`).
+
+## Quality checks after extraction
+
+- Ensure no behavior changes.
+- Keep names and file organization consistent with nearby code.
+- Remove dead code and fix imports after moving declarations.

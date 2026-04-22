@@ -1,0 +1,36 @@
+---
+description: Enforce service-only HTTP calls through shared fetch client
+globs: src/frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# HTTP Access Boundary
+
+- Never call `fetch` directly from React components, hooks, route files, or UI-layer utilities.
+- React code must consume domain service classes only.
+- Service classes are the only place in the codebase where HTTP requests are allowed.
+
+## Required architecture
+
+1. For each domain, create and use a dedicated service class (for example document, auth, billing).
+2. Service classes must perform all HTTP calls through a custom HTTP client that wraps `fetch`.
+3. Do not call raw `fetch` from service methods; call the shared wrapper client instead.
+4. Keep cross-cutting behavior (headers, auth, retries, logging, Sentry/instrumentation hooks, error normalization) centralized in the wrapper client.
+
+## Enforcement guidance
+
+- If you see `fetch` in React/UI code, move that logic into the correct domain service class.
+- If you see repeated request logic in multiple services, extract it into the shared fetch wrapper client.
+- If a domain has no service yet, create one and route all related requests through it.
+- Prefer typed request/response contracts at the service boundary.
+
+## What React can do
+
+- React code may:
+  - instantiate or import a service class,
+  - call service methods,
+  - handle returned data/state/errors for rendering.
+- React code may not:
+  - call `fetch`,
+  - construct raw HTTP request logic,
+  - duplicate networking concerns handled by the wrapper client.

@@ -1,0 +1,32 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# Rule Router 🛣️
+
+Evaluated first; delegates work to specialized rules.
+
+---
+
+## Dispatch Table
+
+| Prio | Event Kind / Context |                                Match Condition                                | Delegate Rule ID          |
+| :--: | :------------------: | :---------------------------------------------------------------------------: | :------------------------ |
+|  0   |   Create dir/file    |           `src/frontend/components/{core,common,logical-units}/**`            | `rule-component-scaffold` |
+|  1   |   Create dir/file    |           `src/frontend/frontend/**`<br><sub>(anything else)</sub>            | `rule-folder-structure`   |
+|  2   |      Save file       | `*.{ts,tsx,js,jsx}` inside `src/`<br>**and** diff contains `await` in handler | `rule-state-events`       |
+|  3   |      Save file       |                       `*.{ts,tsx,js,jsx}` inside `src/`                       | `rule-eslint`             |
+|  4   |   Create/Save file   |                      `*.stories.tsx` <br>or `*.test.tsx`                      | `rule-test-story`         |
+|  F   |      _fallback_      |                                 anything else                                 | `rule-eslint`             |
+
+---
+
+## Routing Logic (concept)
+
+```ts
+function route(ev) {
+  // …remaining checks per table above
+}
+```
