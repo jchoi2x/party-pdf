@@ -2,13 +2,19 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
+  "workspaces": [
+    "artifacts/*",
+    "lib/*",
+    "lib/integrations/*",
+    "scripts"
+  ],
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build": "bun run typecheck && bun run --cwd artifacts/mockup-sandbox build && bun run --cwd artifacts/pdf-collab build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "bun run typecheck:libs && bun run --cwd artifacts/mockup-sandbox typecheck && bun run --cwd artifacts/pdf-collab typecheck && bun run --cwd scripts typecheck"
   },
   "private": true,
+  "packageManager": "bun@1.2.15",
   "devDependencies": {
     "typescript": "~5.9.2",
     "prettier": "^3.8.1"

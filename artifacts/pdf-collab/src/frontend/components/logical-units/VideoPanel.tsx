@@ -5,11 +5,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getInitials } from "@/lib/username";
 import type { ConnectionStatus, Collaborator } from "@/pages/document";
 import DeviceSettingsDialog from "./DeviceSettingsDialog";
+import "./VideoPanel.styles.scss";
 
 const STATUS_CONFIG: Record<ConnectionStatus, { color: string; label: string; pulse: boolean }> = {
-  connecting: { color: "bg-yellow-400", label: "Connecting...", pulse: true },
-  connected: { color: "bg-green-500", label: "Connected", pulse: false },
-  disconnected: { color: "bg-red-500", label: "Disconnected", pulse: false },
+  connecting: { color: "video-panel__connection-dot--connecting", label: "Connecting...", pulse: true },
+  connected: { color: "video-panel__connection-dot--connected", label: "Connected", pulse: false },
+  disconnected: { color: "video-panel__connection-dot--disconnected", label: "Disconnected", pulse: false },
 };
 
 interface VideoPanelProps {
@@ -47,15 +48,15 @@ function VideoTile({ stream, label, muted, audioOutputId }: { stream: MediaStrea
   }, [audioOutputId, muted]);
 
   return (
-    <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
+    <div className="video-panel__tile">
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted={muted}
-        className="w-full h-full object-cover"
+        className="video-panel__tile-video"
       />
-      <span className="absolute bottom-1 left-1 text-2xs bg-black/60 text-white px-1.5 py-0.5 rounded">
+      <span className="video-panel__tile-label">
         {label}
       </span>
     </div>
@@ -64,14 +65,14 @@ function VideoTile({ stream, label, muted, audioOutputId }: { stream: MediaStrea
 
 function PlaceholderCard({ name, color }: { name: string; color: string }) {
   return (
-    <div className="relative rounded-lg overflow-hidden bg-muted aspect-video flex flex-col items-center justify-center gap-1.5">
+    <div className="video-panel__placeholder">
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+        className="video-panel__placeholder-avatar"
         style={{ backgroundColor: color }}
       >
         {getInitials(name)}
       </div>
-      <span className="text-xs text-muted-foreground truncate max-w-[90%]">
+      <span className="video-panel__placeholder-name">
         {name}
       </span>
     </div>
@@ -84,10 +85,10 @@ function ConnectionDot({ connectionStatus }: { connectionStatus: ConnectionStatu
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span
-            className={`absolute top-2 left-2 z-10 h-2.5 w-2.5 rounded-full ${cfg.color} ${cfg.pulse ? "animate-pulse" : ""} ring-1 ring-black/20`}
-            aria-label={cfg.label}
-          />
+            <span
+              className={`video-panel__connection-dot ${cfg.color} ${cfg.pulse ? "video-panel__connection-dot--pulse" : ""}`}
+              aria-label={cfg.label}
+            />
         </TooltipTrigger>
         <TooltipContent side="right">
           <p>{cfg.label}</p>
@@ -106,8 +107,8 @@ function VideoPanelContent({
   connectionStatus,
 }: Pick<VideoPanelProps, "localStream" | "remoteStreams" | "collaborators" | "localUser" | "audioOutputId" | "connectionStatus">) {
   return (
-    <div className="flex-1 overflow-y-auto p-2 space-y-2">
-      <div className="relative">
+    <div className="video-panel__content">
+      <div className="video-panel__tile-shell">
         <ConnectionDot connectionStatus={connectionStatus} />
         {localStream ? (
           <VideoTile stream={localStream} label="You" muted />
@@ -160,7 +161,7 @@ export default function VideoPanel({
     return (
       <>
         <div
-          className="fixed inset-0 bg-black/40 z-40 transition-opacity duration-300"
+          className="video-panel__mobile-overlay"
           style={{
             opacity: mobileOpen ? 1 : 0,
             pointerEvents: mobileOpen ? "auto" : "none",
@@ -168,23 +169,23 @@ export default function VideoPanel({
           onClick={onMobileClose}
         />
         <div
-          className={`fixed inset-x-0 bottom-0 z-50 bg-card border-t rounded-t-2xl shadow-lg transition-transform duration-300 ease-in-out ${
-            mobileOpen ? "translate-y-0" : "translate-y-full"
+          className={`video-panel__mobile-sheet ${
+            mobileOpen ? "video-panel__mobile-sheet--open" : "video-panel__mobile-sheet--closed"
           }`}
           style={{ maxHeight: "60vh" }}
         >
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          <div className="video-panel__mobile-grabber-wrap">
+            <div className="video-panel__mobile-grabber" />
           </div>
 
-          <div className="px-3 pb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Video</span>
-            <div className="flex items-center gap-2">
+          <div className="video-panel__mobile-header">
+            <span className="video-panel__title">Video</span>
+            <div className="video-panel__mobile-actions">
               <Button
                 variant={cameraOn ? "destructive" : "default"}
                 size="sm"
                 onClick={onToggleCamera}
-                className="h-7 text-xs gap-1"
+                className="video-panel__camera-button"
               >
                 {cameraOn ? (
                   <>
@@ -202,14 +203,14 @@ export default function VideoPanel({
                 variant="ghost"
                 size="icon"
                 onClick={onMobileClose}
-                className="h-7 w-7"
+                className="video-panel__icon-button"
               >
                 <X size={16} />
               </Button>
             </div>
           </div>
 
-          <div style={{ maxHeight: "calc(60vh - 80px)", overflowY: "auto" }}>
+          <div className="video-panel__mobile-content">
             <VideoPanelContent
               localStream={localStream}
               remoteStreams={remoteStreams}
@@ -228,25 +229,25 @@ export default function VideoPanel({
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <div className="relative flex-shrink-0 flex">
+    <div className="video-panel">
       <DeviceSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         onSave={onReplaceStream}
       />
       <div
-        className="bg-card border-r flex flex-col overflow-hidden transition-[width] duration-300 ease-in-out"
+        className="video-panel__rail"
         style={{ width: collapsed ? 0 : 256 }}
       >
-        <div className="w-64 flex flex-col flex-1 min-h-0">
-          <div className="p-3 border-b flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Video</span>
-            <div className="flex items-center gap-1">
+        <div className="video-panel__rail-inner">
+          <div className="video-panel__rail-header">
+            <span className="video-panel__title">Video</span>
+            <div className="video-panel__rail-actions">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSettingsOpen(true)}
-                className="h-7 w-7"
+                className="video-panel__icon-button"
                 title="Device settings"
               >
                 <GearSix size={14} />
@@ -255,7 +256,7 @@ export default function VideoPanel({
                 variant={cameraOn ? "destructive" : "default"}
                 size="sm"
                 onClick={onToggleCamera}
-                className="h-7 text-xs gap-1"
+                className="video-panel__camera-button"
               >
                 {cameraOn ? (
                   <>
@@ -285,7 +286,7 @@ export default function VideoPanel({
 
       <button
         onClick={onToggleCollapse}
-        className="flex items-center justify-center w-5 bg-card border-r hover:bg-muted transition-colors"
+        className="video-panel__collapse-button"
         title={collapsed ? "Expand video panel" : "Collapse video panel"}
       >
         {collapsed ? <CaretRight size={14} /> : <CaretLeft size={14} />}

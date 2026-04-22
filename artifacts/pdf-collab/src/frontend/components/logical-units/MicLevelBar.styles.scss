@@ -1,0 +1,7 @@
+.mic-level-bar {
+  @apply h-3 w-full overflow-hidden rounded-full bg-muted;
+
+  &__fill {
+    @apply h-full rounded-full bg-green-500 transition-[width] duration-75;
+  }
+}

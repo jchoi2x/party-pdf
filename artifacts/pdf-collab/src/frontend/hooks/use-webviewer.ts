@@ -16,7 +16,7 @@ import { setupYjsCollaboration } from "@/lib/document/collaboration";
 import { setupCursorTracking } from "@/lib/document/cursor-tracking";
 import type { ConnectionStatus, Collaborator } from "@/lib/document/types";
 
-const API_BASE = "https://oblockparty.xvzf.workers.dev/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 const APRYSE_LICENSE = import.meta.env.APRYSE_LICENSE as string;
 const WEBVIEWER_CDN = import.meta.env.WEBVIEWER_CDN as string;
 

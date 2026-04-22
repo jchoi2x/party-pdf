@@ -1,3 +1,5 @@
+import "./ConnectionModal.styles.scss";
+
 interface ConnectionModalProps {
   type: "connecting" | "disconnected";
 }
@@ -29,14 +31,12 @@ const CONFIG = {
 
 export default function ConnectionModal({ type }: ConnectionModalProps) {
   const { accent, title, message, iconPath } = CONFIG[type];
-  const dotColor = accent === "blue" ? "bg-blue-500" : "bg-yellow-500";
-  const ringColor = accent === "blue" ? "bg-blue-500/15" : "bg-yellow-500/15";
-  const iconColor = accent === "blue" ? "text-blue-500" : "text-yellow-500";
+  const accentClass = accent === "blue" ? "connection-modal--blue" : "connection-modal--yellow";
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-xl shadow-xl px-8 py-7 flex flex-col items-center gap-3 max-w-sm mx-4 text-center">
-        <div className={`w-10 h-10 rounded-full ${ringColor} flex items-center justify-center`}>
+    <div className={`connection-modal ${accentClass}`}>
+      <div className="connection-modal__card">
+        <div className="connection-modal__icon-ring">
           <svg
             width="22"
             height="22"
@@ -46,17 +46,17 @@ export default function ConnectionModal({ type }: ConnectionModalProps) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={iconColor}
+            className="connection-modal__icon"
           >
             {iconPath}
           </svg>
         </div>
-        <p className="font-semibold text-foreground text-base">{title}</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
-        <div className="flex gap-1.5 mt-1">
-          <span className={`w-2 h-2 rounded-full ${dotColor} animate-bounce [animation-delay:-0.3s]`} />
-          <span className={`w-2 h-2 rounded-full ${dotColor} animate-bounce [animation-delay:-0.15s]`} />
-          <span className={`w-2 h-2 rounded-full ${dotColor} animate-bounce`} />
+        <p className="connection-modal__title">{title}</p>
+        <p className="connection-modal__message">{message}</p>
+        <div className="connection-modal__dots">
+          <span className="connection-modal__dot connection-modal__dot--one" />
+          <span className="connection-modal__dot connection-modal__dot--two" />
+          <span className="connection-modal__dot" />
         </div>
       </div>
     </div>

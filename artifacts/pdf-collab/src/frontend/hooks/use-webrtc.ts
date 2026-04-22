@@ -7,7 +7,9 @@ interface PeerConnection {
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
-const PARTY_HOST = "oblockparty.xvzf.workers.dev";
+const PARTY_HOST =
+  import.meta.env.VITE_PARTY_HOST ||
+  (typeof window !== "undefined" ? window.location.host : "localhost");
 
 export function useWebRTC(roomId: string | undefined, enabled: boolean) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);

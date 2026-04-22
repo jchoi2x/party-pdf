@@ -23,6 +23,7 @@ import {
   setStoredDevicePreferences,
 } from "@/hooks/use-media-devices";
 import MicLevelBar from "./MicLevelBar";
+import "./DeviceSettingsDialog.styles.scss";
 
 interface DeviceSettingsDialogProps {
   open: boolean;
@@ -256,7 +257,7 @@ export default function DeviceSettingsDialog({
         else onOpenChange(val);
       }}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent className="device-settings-dialog">
         <DialogHeader>
           <DialogTitle>Device Settings</DialogTitle>
           <DialogDescription>
@@ -264,9 +265,9 @@ export default function DeviceSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Microphone</Label>
+        <div className="device-settings-dialog__sections">
+          <div className="device-settings-dialog__section">
+            <Label className="device-settings-dialog__label">Microphone</Label>
             <Select value={selectedMic} onValueChange={setSelectedMic}>
               <SelectTrigger>
                 <SelectValue placeholder="Select microphone" />
@@ -282,8 +283,8 @@ export default function DeviceSettingsDialog({
             <MicLevelBar stream={previewAudioStream} />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Audio Output</Label>
+          <div className="device-settings-dialog__section">
+            <Label className="device-settings-dialog__label">Audio Output</Label>
             {supportsSetSinkId ? (
               <Select
                 value={selectedOutput}
@@ -301,7 +302,7 @@ export default function DeviceSettingsDialog({
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-xs text-muted-foreground">
+              <p className="device-settings-dialog__hint">
                 Audio output selection is not supported in this browser.
               </p>
             )}
@@ -309,15 +310,15 @@ export default function DeviceSettingsDialog({
               variant="outline"
               size="sm"
               onClick={handleTestAudio}
-              className="w-full"
+               className="device-settings-dialog__test-audio"
             >
               Test Audio
             </Button>
-            <audio ref={testAudioRef} className="hidden" />
+            <audio ref={testAudioRef} className="device-settings-dialog__hidden-audio" />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Camera</Label>
+          <div className="device-settings-dialog__section">
+            <Label className="device-settings-dialog__label">Camera</Label>
             <Select
               value={selectedCamera}
               onValueChange={setSelectedCamera}
@@ -333,17 +334,17 @@ export default function DeviceSettingsDialog({
                 ))}
               </SelectContent>
             </Select>
-            <div className="rounded-lg overflow-hidden bg-muted aspect-video">
+            <div className="device-settings-dialog__preview">
               {previewVideoStream ? (
                 <video
                   ref={videoPreviewRef}
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
+                  className="device-settings-dialog__preview-video"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                <div className="device-settings-dialog__preview-empty">
                   No preview
                 </div>
               )}

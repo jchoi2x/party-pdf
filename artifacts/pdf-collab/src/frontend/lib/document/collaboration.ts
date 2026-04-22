@@ -4,7 +4,9 @@ import * as Y from "yjs";
 import { getStoredUserName, getUserColor } from "@/lib/username";
 import type { ConnectionStatus, CursorPosition, Collaborator } from "@/lib/document/types";
 
-const PARTY_HOST = "oblockparty.xvzf.workers.dev";
+const PARTY_HOST =
+  import.meta.env.VITE_PARTY_HOST ||
+  (typeof window !== "undefined" ? window.location.host : "localhost");
 
 export function setupYjsCollaboration(
   annotationManager: any,

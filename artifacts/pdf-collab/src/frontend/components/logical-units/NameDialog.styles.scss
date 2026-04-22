@@ -1,0 +1,19 @@
+.name-dialog {
+  @apply sm:max-w-sm;
+
+  &__title {
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  &__content {
+    @apply space-y-4 pt-2;
+  }
+
+  &__field {
+    @apply space-y-2;
+  }
+
+  &__submit {
+    @apply w-full;
+  }
+}

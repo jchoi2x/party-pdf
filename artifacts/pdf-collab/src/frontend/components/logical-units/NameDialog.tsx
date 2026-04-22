@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { setStoredUserName } from "@/lib/username";
+import "./NameDialog.styles.scss";
 
 interface NameDialogProps {
   open: boolean;
@@ -40,21 +41,21 @@ export default function NameDialog({ open, onSave }: NameDialogProps) {
       onOpenChange={() => {}}
     >
       <DialogContent
-        className="sm:max-w-sm"
+        className="name-dialog"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         hideCloseButton
       >
         <DialogHeader>
-          <DialogTitle style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+          <DialogTitle className="name-dialog__title">
             What's your name?
           </DialogTitle>
           <DialogDescription>
             Your name will be shown to collaborators when you annotate the document.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 pt-2">
-          <div className="space-y-2">
+        <div className="name-dialog__content">
+          <div className="name-dialog__field">
             <Label htmlFor="user-name">Display name</Label>
             <Input
               id="user-name"
@@ -67,7 +68,7 @@ export default function NameDialog({ open, onSave }: NameDialogProps) {
           </div>
           <Button
             onClick={handleSave}
-            className="w-full"
+            className="name-dialog__submit"
             disabled={!name.trim()}
           >
             Continue

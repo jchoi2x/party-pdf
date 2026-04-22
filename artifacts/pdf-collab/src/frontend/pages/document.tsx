@@ -16,6 +16,7 @@ import ConnectionModal from "@/components/logical-units/ConnectionModal";
 import CursorOverlay from "@/components/logical-units/CursorOverlay";
 import type { ConnectionStatus, Collaborator } from "@/lib/document/types";
 export type { ConnectionStatus, CursorPosition, Collaborator } from "@/lib/document/types";
+import "./document.styles.scss";
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -100,7 +101,7 @@ export default function DocumentPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className="document-page">
       <NameDialog open={showNameDialog} onSave={handleNameSave} />
 
       {!showNameDialog && (
@@ -116,7 +117,7 @@ export default function DocumentPage() {
         />
       )}
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="document-page__main">
         {!isMobile && (
           <VideoPanel
             {...videoPanelSharedProps}
@@ -126,13 +127,13 @@ export default function DocumentPage() {
           />
         )}
 
-        <div className="flex-1 relative overflow-hidden">
+        <div className="document-page__viewer-shell">
           {isLoading && <LoadingSpinner message="Loading document..." />}
           {showConnectingModal && <ConnectionModal type="connecting" />}
           {!isLoading && connectionStatus === "disconnected" && (
             <ConnectionModal type="disconnected" />
           )}
-          <div ref={viewerRef} className="w-full h-full" />
+          <div ref={viewerRef} className="document-page__viewer" />
           <CursorOverlay overlayRef={overlayRef} />
         </div>
       </div>

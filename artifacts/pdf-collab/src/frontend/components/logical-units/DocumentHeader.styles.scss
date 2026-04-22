@@ -1,0 +1,68 @@
+.document-header {
+  @apply flex items-center justify-between border-b bg-card px-4 py-2 shadow-sm sm:px-6;
+
+  &__left {
+    @apply flex min-w-0 items-center gap-3;
+  }
+
+  &__title-wrap {
+    @apply flex min-w-0 items-center gap-2;
+  }
+
+  &__title {
+    @apply truncate text-base font-semibold text-foreground sm:text-lg;
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  &__right {
+    @apply flex shrink-0 items-center gap-3;
+  }
+
+  &__icon-button {
+    @apply h-9 w-9;
+
+    &--no-shrink {
+      @apply shrink-0;
+    }
+  }
+
+  &__collaborators {
+    @apply -space-x-2 flex items-center;
+  }
+
+  &__collaborator-avatar {
+    @apply flex h-8 w-8 cursor-default items-center justify-center rounded-full text-xs font-semibold text-white ring-2 ring-card;
+
+    &--overflow {
+      @apply bg-muted text-muted-foreground;
+    }
+  }
+
+  &__editing {
+    @apply flex items-center gap-2;
+  }
+
+  &__editing-input {
+    @apply h-8 w-36 text-sm;
+  }
+
+  &__editing-action {
+    @apply h-8;
+  }
+
+  &__current-user {
+    @apply flex items-center gap-2;
+  }
+
+  &__current-user-avatar {
+    @apply h-9 w-9;
+  }
+
+  &__current-user-avatar-fallback {
+    @apply bg-primary text-xs font-semibold text-primary-foreground;
+  }
+
+  &__current-user-badge {
+    @apply hidden text-xs sm:flex;
+  }
+}

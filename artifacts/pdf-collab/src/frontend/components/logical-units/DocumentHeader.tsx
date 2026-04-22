@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { setStoredUserName, getInitials } from "@/lib/username";
 import type { Collaborator } from "@/pages/document";
+import "./DocumentHeader.styles.scss";
 
 interface DocumentHeaderProps {
   documentName: string;
@@ -63,36 +64,32 @@ export default function DocumentHeader({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <header className="flex items-center justify-between px-4 sm:px-6 py-2 border-b bg-card shadow-sm">
-        <div className="flex items-center gap-3 min-w-0">
+      <header className="document-header">
+        <div className="document-header__left">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/")}
-            className="flex-shrink-0 h-9 w-9"
+            className="document-header__icon-button document-header__icon-button--no-shrink"
             title="Back to home"
           >
             <House size={18} weight="bold" />
           </Button>
-          <div className="flex items-center gap-2 min-w-0">
-            <h1
-              className="text-base sm:text-lg font-semibold text-foreground truncate"
-              style={{ fontFamily: "Space Grotesk, sans-serif" }}
-              title={documentName}
-            >
+          <div className="document-header__title-wrap">
+            <h1 className="document-header__title" title={documentName}>
               {documentName}
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="document-header__right">
           {visibleCollaborators.length > 0 && (
-            <div className="flex items-center -space-x-2">
+            <div className="document-header__collaborators">
               {visibleCollaborators.map((collab, i) => (
                 <Tooltip key={`${collab.name}-${i}`}>
                   <TooltipTrigger asChild>
                     <div
-                      className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-semibold ring-2 ring-card cursor-default"
+                      className="document-header__collaborator-avatar"
                       style={{ backgroundColor: collab.color }}
                     >
                       {getInitials(collab.name)}
@@ -106,7 +103,7 @@ export default function DocumentHeader({
               {overflowCount > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted text-muted-foreground text-xs font-semibold ring-2 ring-card cursor-default">
+                    <div className="document-header__collaborator-avatar document-header__collaborator-avatar--overflow">
                       +{overflowCount}
                     </div>
                   </TooltipTrigger>
@@ -123,7 +120,7 @@ export default function DocumentHeader({
               variant="ghost"
               size="icon"
               onClick={onMobileVideoToggle}
-              className="h-9 w-9"
+              className="document-header__icon-button"
               title="Open video panel"
             >
               <VideoCamera size={18} weight="bold" />
@@ -134,33 +131,33 @@ export default function DocumentHeader({
             variant="ghost"
             size="icon"
             onClick={onToggleTheme}
-            className="h-9 w-9"
+            className="document-header__icon-button"
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDark ? <Sun size={18} weight="bold" /> : <Moon size={18} weight="bold" />}
           </Button>
 
           {isEditing ? (
-            <div className="flex items-center gap-2">
+            <div className="document-header__editing">
               <Input
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="h-8 w-36 text-sm"
+                className="document-header__editing-input"
                 autoFocus
               />
-              <Button size="sm" onClick={handleSaveName} className="h-8">Save</Button>
-              <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-8">Cancel</Button>
+              <Button size="sm" onClick={handleSaveName} className="document-header__editing-action">Save</Button>
+              <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="document-header__editing-action">Cancel</Button>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+              <div className="document-header__current-user">
+                <Avatar className="document-header__current-user-avatar">
+                  <AvatarFallback className="document-header__current-user-avatar-fallback">
                     {getInitials(userName)}
                   </AvatarFallback>
                 </Avatar>
-                <Badge variant="secondary" className="hidden sm:flex text-xs">
+                <Badge variant="secondary" className="document-header__current-user-badge">
                   {userName}
                 </Badge>
               </div>
@@ -171,7 +168,7 @@ export default function DocumentHeader({
                   setEditValue(userName);
                   setIsEditing(true);
                 }}
-                className="h-9 w-9"
+                className="document-header__icon-button"
                 title="Edit name"
               >
                 <PencilSimple size={16} weight="bold" />

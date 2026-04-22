@@ -1,0 +1,67 @@
+.connection-modal {
+  @apply absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm;
+
+  &__card {
+    @apply mx-4 flex max-w-sm flex-col items-center gap-3 rounded-xl border border-border bg-card px-8 py-7 text-center shadow-xl;
+  }
+
+  &__icon-ring {
+    @apply flex h-10 w-10 items-center justify-center rounded-full;
+  }
+
+  &__icon {
+    @apply h-[22px] w-[22px];
+  }
+
+  &__title {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  &__message {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+
+  &__dots {
+    @apply mt-1 flex gap-1.5;
+  }
+
+  &__dot {
+    @apply h-2 w-2 animate-bounce rounded-full;
+
+    &--one {
+      animation-delay: -0.3s;
+    }
+
+    &--two {
+      animation-delay: -0.15s;
+    }
+  }
+
+  &--blue {
+    .connection-modal__icon-ring {
+      @apply bg-blue-500/15;
+    }
+
+    .connection-modal__icon {
+      @apply text-blue-500;
+    }
+
+    .connection-modal__dot {
+      @apply bg-blue-500;
+    }
+  }
+
+  &--yellow {
+    .connection-modal__icon-ring {
+      @apply bg-yellow-500/15;
+    }
+
+    .connection-modal__icon {
+      @apply text-yellow-500;
+    }
+
+    .connection-modal__dot {
+      @apply bg-yellow-500;
+    }
+  }
+}
