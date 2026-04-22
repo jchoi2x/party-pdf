@@ -10,6 +10,7 @@
     "**/*.test.ts"
   ],
   "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "isolatedModules": true,
     "module": "esnext",
     "noEmitOnError": true,

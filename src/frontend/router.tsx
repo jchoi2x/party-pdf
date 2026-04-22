@@ -1,7 +1,9 @@
+import { lazy } from 'react';
 import { Route, Switch } from 'wouter';
-import DocumentPage from '@/pages/document';
-import Home from '@/pages/home';
-import NotFound from '@/pages/not-found';
+
+const DocumentPage = lazy(() => import('@/pages/document'))
+const Home = lazy(() => import('@/pages/home'))
+const NotFound = lazy(() => import('@/pages/not-found'))
 
 export default function Router() {
   return (
