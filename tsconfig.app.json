@@ -1,6 +1,4 @@
 {
-  "compileOnSave": false,
-  "files": [],
   "include": [
     "src/frontend/**/*",
     "src/stories/**/*"
@@ -50,6 +48,5 @@
         "./src/frontend/*"
       ]
     }
-  },
-  "references": []
+  }
 }
