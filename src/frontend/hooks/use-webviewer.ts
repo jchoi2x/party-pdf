@@ -12,7 +12,7 @@ import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
 import { getDocument } from '@/lib/indexeddb';
 import { getStoredUserName } from '@/lib/username';
 
-const API_BASE = 'https://oblockparty.xvzf.workers.dev/api';
+const API_BASE = `${window.location.origin}/api`;
 const APRYSE_LICENSE = import.meta.env.APRYSE_LICENSE as string;
 const WEBVIEWER_CDN = import.meta.env.WEBVIEWER_CDN as string;
 

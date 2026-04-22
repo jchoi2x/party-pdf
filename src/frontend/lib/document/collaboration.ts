@@ -5,7 +5,7 @@ import * as Y from 'yjs';
 import type { Collaborator, ConnectionStatus, CursorPosition } from '@/lib/document/types';
 import { getStoredUserName, getUserColor } from '@/lib/username';
 
-const PARTY_HOST = 'oblockparty.xvzf.workers.dev';
+const PARTY_HOST = `${window.location.host}/api`;
 
 export function setupYjsCollaboration(
   annotationManager: Core.AnnotationManager,

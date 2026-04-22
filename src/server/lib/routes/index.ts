@@ -36,10 +36,6 @@ apiApp.doc('/swagger-ui/openapi.json', {
 			url: '/api',
 			description: 'Local API Base URL',
 		},
-		{
-			url: 'https://oblockparty.xvzf.workers.dev/api',
-			description: 'Production API Base URL',
-		},
 	],
 });
 

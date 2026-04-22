@@ -11,7 +11,7 @@ import { saveDocument } from '@/lib/indexeddb';
 import { useTheme } from '@/lib/theme';
 import { formatFileSize } from '@/lib/utils';
 
-const API_BASE = 'https://oblockparty.xvzf.workers.dev/api';
+const API_BASE = `${window.location.origin}/api`;
 
 function uploadFileWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {

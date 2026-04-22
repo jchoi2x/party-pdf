@@ -15,7 +15,7 @@ app.get('/api/ping', (c) => {
   return c.json({ message: 'pong' });
 });
 
-app.get('/api/parties/parties/room/:id', async (c) => {
+app.get('/api/parties/room/:id', async (c) => {
   const id = c.req.param('id');
   const server = await getServerByName(c.env.ROOM, id.toString());
   const response = await server.fetch(c.req.raw);

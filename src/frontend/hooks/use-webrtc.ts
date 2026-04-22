@@ -7,7 +7,7 @@ interface PeerConnection {
 
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 
-const PARTY_HOST = 'oblockparty.xvzf.workers.dev';
+const PARTY_HOST = window.location.host
 
 export function useWebRTC(roomId: string | undefined, enabled: boolean) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -165,7 +165,8 @@ export function useWebRTC(roomId: string | undefined, enabled: boolean) {
   useEffect(() => {
     if (!roomId || !enabled) return;
 
-    const wsUrl = `wss://${PARTY_HOST}/signal?room=${encodeURIComponent(roomId)}`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}://${PARTY_HOST}/signal?room=${encodeURIComponent(roomId)}`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
