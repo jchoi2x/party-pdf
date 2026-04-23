@@ -8,11 +8,6 @@ import { withSentry } from './lib/sentry';
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(logger());
-app.use('*', async (c, next) => {
-  await next();
-  c.header('Cross-Origin-Opener-Policy', 'same-origin');
-  c.header('Cross-Origin-Embedder-Policy', 'require-corp');
-});
 
 app.route('', apiApp);
 
