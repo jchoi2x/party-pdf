@@ -156,6 +156,7 @@ export function setupYjsCollaboration(
     }
 
     provider.on('synced', handleSynced);
+
   } catch (e) {
     console.warn('Real-time collaboration setup failed:', e);
     setConnectionStatus('disconnected');

@@ -11,15 +11,14 @@ import { applyWebViewerTheme } from '@/lib/document/theme';
 import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
 import { getDocument } from '@/lib/indexeddb';
 import { getStoredUserName } from '@/lib/username';
+import { configureWebViewerInstance, getWebViewerConstructorOptions } from './lib/configuration';
 
 const API_BASE = `${window.location.origin}/api`;
-const APRYSE_LICENSE = import.meta.env.APRYSE_LICENSE as string;
-const WEBVIEWER_CDN = import.meta.env.WEBVIEWER_CDN as string;
 
-if (!APRYSE_LICENSE) {
+if (!import.meta.env.APRYSE_LICENSE) {
   console.error('APRYSE_LICENSE environment variable is not set.');
 }
-if (!WEBVIEWER_CDN) {
+if (!import.meta.env.WEBVIEWER_CDN) {
   console.error('WEBVIEWER_CDN environment variable is not set.');
 }
 
@@ -94,15 +93,7 @@ export function useWebViewer({
         if (!viewerRef.current || viewerInitialized.current) return;
         viewerInitialized.current = true;
 
-        const instance = await WebViewer(
-          {
-            path: WEBVIEWER_CDN,
-            licenseKey: APRYSE_LICENSE,
-            ...(docUrl ? { initialDoc: docUrl } : {}),
-          },
-          viewerRef.current,
-        );
-        (window as any).instance = instance;
+        const instance = await WebViewer(getWebViewerConstructorOptions(docUrl), viewerRef.current);
 
         viewerInstanceRef.current = instance;
         // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
@@ -118,9 +109,7 @@ export function useWebViewer({
           console.warn('Failed to load i18n translations:', i18nErr);
         }
 
-        instance.UI.disableElements(['toolbarGroup-Edit']);
-        instance.UI.setTheme(isDark ? instance.UI.Theme.DARK : instance.UI.Theme.LIGHT);
-        instance.UI.addEventListener('viewerLoaded', () => applyWebViewerTheme(instance, isDark));
+        configureWebViewerInstance(instance, isDark);
 
         const { documentViewer, annotationManager } = instance.Core;
         annotationManager.setCurrentUser(getStoredUserName() || 'Guest');

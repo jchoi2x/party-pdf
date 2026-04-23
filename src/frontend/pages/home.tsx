@@ -10,35 +10,7 @@ import { Label } from '@/components/ui/label';
 import { saveDocument } from '@/lib/indexeddb';
 import { useTheme } from '@/lib/theme';
 import { formatFileSize } from '@/lib/utils';
-
-const API_BASE = `${window.location.origin}/api`;
-
-function uploadFileWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url, true);
-    xhr.setRequestHeader('Content-Type', file.type);
-
-    xhr.upload.addEventListener('progress', (e) => {
-      if (e.lengthComputable) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    });
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
-      }
-    });
-
-    xhr.addEventListener('error', () => reject(new Error('Upload network error')));
-    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
-
-    xhr.send(file);
-  });
-}
+import { DocumentUploadService } from '@/services/document-upload.service';
 
 export default function Home() {
   const [, navigate] = useLocation();
@@ -47,6 +19,7 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isDark, toggleTheme } = useTheme();
+  const uploadServiceRef = useRef(new DocumentUploadService());
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -67,21 +40,12 @@ export default function Home() {
     setUploadProgress(0);
 
     try {
-      const uploadUrlRes = await fetch(
-        `${API_BASE}/upload-url?filename=${encodeURIComponent(selectedFile.name)}&contentType=application/pdf`,
-      );
-      if (!uploadUrlRes.ok) {
-        throw new Error('Failed to get upload URL');
-      }
-      const { url: uploadUrl, id } = await uploadUrlRes.json();
-
-      await uploadFileWithProgress(uploadUrl, selectedFile, setUploadProgress);
-
-      const downloadUrlRes = await fetch(`${API_BASE}/download-url/${id}`);
-      if (!downloadUrlRes.ok) {
-        throw new Error('Failed to get download URL');
-      }
-      const { url: downloadUrl } = await downloadUrlRes.json();
+      const { url: downloadUrl, id } = await uploadServiceRef.current.executeUploadFlow({ 
+        file: selectedFile,
+        contentType: 'application/pdf',
+        onProgress: setUploadProgress,
+        filename: selectedFile.name,
+      });
 
       sessionStorage.setItem(id, JSON.stringify({ name: selectedFile.name, downloadUrl }));
 
@@ -165,7 +129,7 @@ export default function Home() {
                     />
                     {selectedFile ? (
                       <div className='flex items-center gap-3'>
-                        <div className='flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center'>
+                        <div className='shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center'>
                           <FilePdf size={20} weight='fill' className='text-primary' />
                         </div>
                         <div className='text-left min-w-0 flex-1'>
