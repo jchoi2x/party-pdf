@@ -74,7 +74,7 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
   },
-  envPrefix: ["VITE_", "APRYSE_", "WEBVIEWER_"],
+  envPrefix: ["VITE_", "APRYSE_", "WEBVIEWER_", "AUTH0_"],
   test: {
     projects: [
       {

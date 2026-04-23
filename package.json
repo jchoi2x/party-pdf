@@ -18,6 +18,7 @@
     "biome:ci": "biome ci ./src"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.16.2",
     "@aws-sdk/client-s3": "^3.1034.0",
     "@aws-sdk/s3-request-presigner": "^3.1034.0",
     "@hono/swagger-ui": "^0.6.1",

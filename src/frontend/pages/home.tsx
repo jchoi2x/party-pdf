@@ -88,7 +88,7 @@ export default function Home() {
               className='text-3xl font-bold text-foreground tracking-tight'
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
-              DocCollab
+              Party-PDF
             </h1>
             <p className='mt-2 text-muted-foreground text-sm'>
               Upload a PDF to start a real-time collaboration session
