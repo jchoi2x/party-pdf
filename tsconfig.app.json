@@ -1,7 +1,6 @@
 {
   "include": [
-    "src/frontend/**/*",
-    "src/stories/**/*"
+    "src/frontend/**/*"
   ],
   "exclude": [
     "node_modules",

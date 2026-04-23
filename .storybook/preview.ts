@@ -1,4 +1,6 @@
 import type { Preview } from '@storybook/react-vite'
+// @ts-expect-error - Storybook needs a side-effect CSS import for Tailwind styles.
+import '../src/frontend/index.css'
 
 const preview: Preview = {
   parameters: {

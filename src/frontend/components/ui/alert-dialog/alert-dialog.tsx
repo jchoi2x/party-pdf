@@ -10,7 +10,7 @@ import {
   Trigger,
 } from '@radix-ui/react-alert-dialog';
 import { type ComponentPropsWithoutRef, type ElementRef, forwardRef, type HTMLAttributes } from 'react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button/button';
 import { cn } from '@/lib/utils';
 
 const AlertDialog = Root;
