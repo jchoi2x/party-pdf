@@ -4,6 +4,10 @@ globs:
 alwaysApply: true
 ---
 
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-router" title="Cursor Rule — Router (Entry Point)" />
+
 # Rule Router 🛣️
 
 Evaluated first; delegates work to specialized rules.
@@ -17,9 +21,9 @@ Evaluated first; delegates work to specialized rules.
 |  0   |   Create dir/file    |           `src/frontend/components/{core,common,logical-units}/**`            | `rule-component-scaffold` |
 |  1   |   Create dir/file    |           `src/frontend/frontend/**`<br><sub>(anything else)</sub>            | `rule-folder-structure`   |
 |  2   |      Save file       | `*.{ts,tsx,js,jsx}` inside `src/`<br>**and** diff contains `await` in handler | `rule-state-events`       |
-|  3   |      Save file       |                       `*.{ts,tsx,js,jsx}` inside `src/`                       | `rule-eslint`             |
-|  4   |   Create/Save file   |                      `*.stories.tsx` <br>or `*.test.tsx`                      | `rule-test-story`         |
-|  F   |      _fallback_      |                                 anything else                                 | `rule-eslint`             |
+|  3   |      Save file       |                       `*.{ts,tsx,js,jsx}` inside `src/`                       | `rule-biome`              |
+|  4   |   Create/Save file   |                      `*.stories.tsx` <br>or `*.spec.tsx`                      | `rule-test-story`         |
+|  F   |      _fallback_      |                                 anything else                                 | `rule-biome`              |
 
 ---
 

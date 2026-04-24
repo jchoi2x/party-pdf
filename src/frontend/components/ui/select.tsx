@@ -59,7 +59,6 @@ const SelectScrollDownButton = forwardRef<
   </SelectPrimitive.ScrollDownButton>
 ));
 
-
 const SelectContent = forwardRef<
   ElementRef<typeof SelectPrimitive.Content>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Content>

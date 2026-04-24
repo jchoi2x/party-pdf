@@ -1,26 +1,19 @@
 import WebViewer from '@pdftron/webviewer';
 import { flatten } from 'flat';
 import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type YProvider from 'y-partyserver/provider';
+import { variables } from '@/constants/vars';
 import translateEn from '@/constants/webviewer/translate-en.json';
-import { setupYjsCollaboration } from '@/lib/document/collaboration';
+import { useApiAuth } from '@/contexts/api-auth';
+import { type PartyConnectionParams, setupYjsCollaboration } from '@/lib/document/collaboration';
 import { setupCursorTracking } from '@/lib/document/cursor-tracking';
 import { applyWebViewerTheme } from '@/lib/document/theme';
 import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
 import { getDocument } from '@/lib/indexeddb';
 import { getStoredUserName } from '@/lib/username';
 import { configureWebViewerInstance, getWebViewerConstructorOptions } from './lib/configuration';
-
-const API_BASE = `${window.location.origin}/api`;
-
-if (!import.meta.env.APRYSE_LICENSE) {
-  console.error('APRYSE_LICENSE environment variable is not set.');
-}
-if (!import.meta.env.WEBVIEWER_CDN) {
-  console.error('WEBVIEWER_CDN environment variable is not set.');
-}
 
 interface UseWebViewerOptions {
   id: string;
@@ -47,9 +40,18 @@ export function useWebViewer({
   setCollaborators,
   navigate,
 }: UseWebViewerOptions) {
+  const { apiFetch, getAccessToken } = useApiAuth();
   const viewerInitialized = useRef(false);
   const [docName, setDocName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const getPartyParams = useCallback(async (): Promise<PartyConnectionParams> => {
+    const token = await getAccessToken();
+    if (token) {
+      return { access_token: token };
+    }
+    return {};
+  }, [getAccessToken]);
 
   useEffect(() => {
     if (!id) {
@@ -68,13 +70,15 @@ export function useWebViewer({
           const parsed = JSON.parse(cached);
           docUrl = parsed.downloadUrl;
           name = parsed.name;
+          console.debug('Cached document found:', docUrl, name);
         } else {
           try {
-            const res = await fetch(`${API_BASE}/download-url/${id}`);
+            const res = await apiFetch(`${variables.apiBase}/download-url/${id}`);
             if (!res.ok) throw new Error('Failed to fetch download URL');
             const data = await res.json();
             docUrl = data.url;
             name = 'Shared Document';
+            console.debug('Cloud document fetched:', docUrl, name);
           } catch (cloudErr) {
             console.warn('Cloud download failed, trying local fallback:', cloudErr);
             const localDoc = await getDocument(id);
@@ -116,7 +120,14 @@ export function useWebViewer({
 
         documentViewer.addEventListener('documentLoaded', () => {
           setIsLoading(false);
-          setupYjsCollaboration(annotationManager, id, providerRef, setCollaborators, setConnectionStatus);
+          setupYjsCollaboration(
+            annotationManager,
+            id,
+            providerRef,
+            setCollaborators,
+            setConnectionStatus,
+            getPartyParams,
+          );
           setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
         });
 
@@ -142,7 +153,7 @@ export function useWebViewer({
         providerRef.current = null;
       }
     };
-  }, [id]);
+  }, [apiFetch, getPartyParams, id]);
 
   useEffect(() => {
     const instance = viewerInstanceRef.current;

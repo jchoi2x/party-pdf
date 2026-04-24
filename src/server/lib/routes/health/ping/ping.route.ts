@@ -6,4 +6,3 @@ import { pingHandler } from './ping.handler';
 export const pingRouter = new OpenAPIHono<{ Bindings: Env }>();
 
 pingRouter.openapi(pingConfig, pingHandler);
-

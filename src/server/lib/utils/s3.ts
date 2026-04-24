@@ -1,11 +1,11 @@
-import { env } from "cloudflare:workers";
+import { env } from 'cloudflare:workers';
 
-import { S3Client , PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const initS3Client = () => {
   const s3 = new S3Client({
-    region: "auto", // Required by AWS SDK, not used by R2
+    region: 'auto', // Required by AWS SDK, not used by R2
     // Provide your R2 endpoint: https://<ACCOUNT_ID>.r2.cloudflarestorage.com
     endpoint: env.S3_URL,
     credentials: {
@@ -20,16 +20,15 @@ export const initS3Client = () => {
     prefix = 'rendercv',
     name,
     contentType = 'application/pdf',
-    buffer
+    buffer,
   }: {
-    bucket?: string,
+    bucket?: string;
     name?: string;
-    contentType?: string,
-    prefix?: string,
-    expiresIn?: number,
-    buffer: ArrayBuffer,
+    contentType?: string;
+    prefix?: string;
+    expiresIn?: number;
+    buffer: ArrayBuffer;
   }) {
-
     const uuid = name ?? crypto.randomUUID();
     const fPath = `${prefix}/${uuid}`;
 
@@ -60,13 +59,12 @@ export const initS3Client = () => {
     contentType = 'application/pdf',
     expiresIn = 3600,
   }: {
-    bucket?: string,
+    bucket?: string;
     name?: string;
-    contentType?: string,
-    prefix?: string,
-    expiresIn?: number,
+    contentType?: string;
+    prefix?: string;
+    expiresIn?: number;
   }) {
-
     const uuid = crypto.randomUUID();
     const fPath = `${prefix}/${uuid}.pdf`;
 
@@ -81,25 +79,20 @@ export const initS3Client = () => {
     });
 
     const url = await getSignedUrl(s3, cmd, {
-      expiresIn
+      expiresIn,
     });
 
     return { url, id: uuid };
   }
 
-
-  function getDownloadUrl({
-    id,
-    prefix = 'rendercv',
-  }: { id: string, prefix?: string }) {
+  function getDownloadUrl({ id, prefix = 'rendercv' }: { id: string; prefix?: string }) {
     const fPath = `${prefix}/${id}.pdf`;
     return `${env.S3_PUBLIC_URL}/${fPath}`;
   }
-
 
   return {
     uploadPdfToS3,
     generateUploadUrl,
     getDownloadUrl,
-  }
+  };
 };

@@ -2,10 +2,8 @@ import type WebViewer from '@pdftron/webviewer';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'wouter';
 import type YProvider from 'y-partyserver/provider';
-import LoadingSpinner from '@/components/common/LoadingSpinner';
-import ConnectionModal from '@/components/logical-units/ConnectionModal';
-import CursorOverlay from '@/components/logical-units/CursorOverlay';
 import DocumentHeader from '@/components/logical-units/DocumentHeader';
+import DocumentPanel from '@/components/logical-units/DocumentPanel';
 import NameDialog from '@/components/logical-units/NameDialog';
 import VideoPanel from '@/components/logical-units/VideoPanel';
 import { useCursorTracking } from '@/hooks/use-cursor-tracking';
@@ -21,7 +19,7 @@ export type { Collaborator, ConnectionStatus, CursorPosition } from '@/lib/docum
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   const isMobile = useIsMobile();
 
   const [userName, setUserName] = useState<string | null>(getStoredUserName());
@@ -99,7 +97,7 @@ export default function DocumentPage() {
   }
 
   return (
-    <div className='flex flex-col h-screen bg-background overflow-hidden'>
+    <div className='flex flex-col flex-1 min-h-0 bg-background overflow-hidden'>
       <NameDialog open={showNameDialog} onSave={handleNameSave} />
 
       {!showNameDialog && (
@@ -107,8 +105,6 @@ export default function DocumentPage() {
           documentName={docName || 'Loading...'}
           userName={userName || ''}
           onUserNameChange={handleUserNameChange}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
           collaborators={collaborators}
           isMobile={isMobile}
           onMobileVideoToggle={() => setMobileVideoOpen(true)}
@@ -125,13 +121,13 @@ export default function DocumentPage() {
           />
         )}
 
-        <div className='flex-1 relative overflow-hidden'>
-          {isLoading && <LoadingSpinner message='Loading document...' />}
-          {showConnectingModal && <ConnectionModal type='connecting' />}
-          {!isLoading && connectionStatus === 'disconnected' && <ConnectionModal type='disconnected' />}
-          <div ref={viewerRef} className='w-full h-full' />
-          <CursorOverlay overlayRef={overlayRef} />
-        </div>
+        <DocumentPanel
+          isLoading={isLoading}
+          showConnectingModal={showConnectingModal}
+          connectionStatus={connectionStatus}
+          viewerRef={viewerRef}
+          overlayRef={overlayRef}
+        />
       </div>
 
       {isMobile && (

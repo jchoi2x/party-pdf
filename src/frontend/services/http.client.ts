@@ -1,4 +1,3 @@
-
 export interface FetchV2RequestInit extends RequestInit {
   params?: Record<string, string>;
   /**
@@ -11,7 +10,6 @@ export type FetchV2Response<SuccessType = unknown, FailureType = unknown> =
   | { ok: true; status: number; headers: Headers; data: SuccessType | string }
   | { ok: false; status: number; headers: Headers; data: FailureType };
 
-
 const getFullUrl = (baseUrl: string, url: string, params: Record<string, string>) => {
   if (url.startsWith('http')) {
     return url;
@@ -22,25 +20,26 @@ const getFullUrl = (baseUrl: string, url: string, params: Record<string, string>
   const _currentSearch = _url.search ? new URLSearchParams(_url.search) : new URLSearchParams();
   const currentSearch = Object.fromEntries([..._currentSearch]);
 
-  
-
   _url.search = new URLSearchParams({
     ...currentSearch,
-    ...params
+    ...params,
   }).toString();
   return _url.toString();
-}
+};
 
+export type HttpClientAuthOptions = {
+  getAccessToken?: () => Promise<string | undefined>;
+};
 
-const buildClient = (baseUrl: string) => {
+const buildClient = (baseUrl: string, auth?: HttpClientAuthOptions) => {
   /**
- * Using native fetch to make a request to the API.
- * In addition taking care of infrastructure headers like Authorization, AWS WAF Token.
- * Inferring the request type if not provided to be application/json.
- */
+   * Using native fetch to make a request to the API.
+   * In addition taking care of infrastructure headers like Authorization, AWS WAF Token.
+   * Inferring the request type if not provided to be application/json.
+   */
   async function fetchV2<SuccessType = unknown, FailureType = unknown>(
     url: string,
-    _options: FetchV2RequestInit = {}
+    _options: FetchV2RequestInit = {},
   ): Promise<FetchV2Response<SuccessType, FailureType>> {
     try {
       const { onUploadProgress, params = {}, ...options } = _options;
@@ -52,6 +51,10 @@ const buildClient = (baseUrl: string) => {
       const headers = new Headers(opts.headers);
       const body = opts.body;
 
+      const bearer = await auth?.getAccessToken?.();
+      if (bearer) {
+        headers.set('Authorization', `Bearer ${bearer}`);
+      }
 
       const fullUrl = getFullUrl(baseUrl, url, params);
 
@@ -61,10 +64,7 @@ const buildClient = (baseUrl: string) => {
       // }
 
       const hasJsonBody =
-        typeof body === 'string' &&
-        !headers.has('Content-Type') &&
-        opts.method !== 'GET' &&
-        opts.method !== 'HEAD';
+        typeof body === 'string' && !headers.has('Content-Type') && opts.method !== 'GET' && opts.method !== 'HEAD';
       if (hasJsonBody) {
         headers.set('Content-Type', 'application/json');
       }
@@ -93,20 +93,18 @@ const buildClient = (baseUrl: string) => {
       opts.headers = headers;
 
       const response = await fetch(fullUrl, opts);
-      const ret = { 
-        headers: response.headers, 
-        ok: response.ok, 
-        status: response.status, 
-        data: {} as SuccessType | string
+      const ret = {
+        headers: response.headers,
+        ok: response.ok,
+        status: response.status,
+        data: {} as SuccessType | string,
       };
-
 
       try {
         const isJson = response.headers.get('content-type')?.includes('application/json');
         const data = isJson ? await response.json() : await response.text();
 
         ret.data = data;
-        
 
         // eslint-disable-next-line no-empty
       } catch {
@@ -123,18 +121,19 @@ const buildClient = (baseUrl: string) => {
   return fetchV2;
 };
 
-
-
 export class HttpClient {
   baseUrl: string;
   client: ReturnType<typeof buildClient>;
-  
-  constructor(baseUrl: string) {
+
+  constructor(baseUrl: string, auth?: HttpClientAuthOptions) {
     this.baseUrl = baseUrl;
-    this.client = buildClient(baseUrl);
+    this.client = buildClient(baseUrl, auth);
   }
 
-  get<SuccessType = unknown, FailureType = unknown>(url: string, options: FetchV2RequestInit = {}): Promise<FetchV2Response<SuccessType, FailureType>> {
+  get<SuccessType = unknown, FailureType = unknown>(
+    url: string,
+    options: FetchV2RequestInit = {},
+  ): Promise<FetchV2Response<SuccessType, FailureType>> {
     return this.client<SuccessType, FailureType>(url, {
       method: 'GET',
       ...options,
@@ -180,5 +179,4 @@ export class HttpClient {
       ...options,
     });
   }
-
 }
