@@ -7,7 +7,7 @@ interface PeerConnection {
 
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 
-const PARTY_HOST = window.location.host
+const PARTY_HOST = window.location.host;
 
 export function useWebRTC(roomId: string | undefined, enabled: boolean) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);

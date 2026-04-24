@@ -1,4 +1,4 @@
-import { House, Moon, PencilSimple, Sun, VideoCamera } from '@phosphor-icons/react';
+import { House, PencilSimple, VideoCamera } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
@@ -14,8 +14,6 @@ interface DocumentHeaderProps {
   documentName: string;
   userName: string;
   onUserNameChange: (name: string) => void;
-  isDark: boolean;
-  onToggleTheme: () => void;
   collaborators: Collaborator[];
   isMobile?: boolean;
   onMobileVideoToggle?: () => void;
@@ -27,8 +25,6 @@ export default function DocumentHeader({
   documentName,
   userName,
   onUserNameChange,
-  isDark,
-  onToggleTheme,
   collaborators,
   isMobile,
   onMobileVideoToggle,
@@ -134,16 +130,6 @@ export default function DocumentHeader({
               <VideoCamera size={18} weight='bold' />
             </Button>
           )}
-
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={onToggleTheme}
-            className='h-9 w-9'
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? <Sun size={18} weight='bold' /> : <Moon size={18} weight='bold' />}
-          </Button>
 
           {isEditing ? (
             <div className='flex items-center gap-2'>

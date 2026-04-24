@@ -1,0 +1,27 @@
+---
+description: Browser verification auth defaults
+globs:
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-browser-login-auth" title="Cursor Rule — Browser Login Auth" />
+
+# Browser Login Auth
+
+When the agent starts the app and uses browser automation to verify UI/workflows, it must authenticate with the project's default test account.
+
+## Required behavior
+
+1. Before any login action, read credentials from `.dev.vars`.
+2. Use:
+   - `E2E_LOGIN_EMAIL`
+   - `E2E_LOGIN_PASSWORD`
+3. If both values exist, use them as the default login credentials for browser checks.
+4. If either value is missing, stop and ask the user for credentials instead of guessing.
+
+## Notes
+
+- Do not hardcode credentials in source code.
+- Treat credentials as secrets and avoid printing them unnecessarily.

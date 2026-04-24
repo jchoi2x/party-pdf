@@ -6,4 +6,3 @@ import { uploadUrlHandler } from './upload-url.handler';
 export const uploadUrlRouter = new OpenAPIHono<{ Bindings: Env }>();
 
 uploadUrlRouter.openapi(uploadUrlConfig, uploadUrlHandler);
-

@@ -6,4 +6,3 @@ import { getTokenHandler } from './get-token.handler';
 export const getTokenRouter = new OpenAPIHono<{ Bindings: Env }>();
 
 getTokenRouter.openapi(getTokenConfig, getTokenHandler);
-

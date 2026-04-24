@@ -12,7 +12,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getStoredDevicePreferences, setStoredDevicePreferences, useMediaDevices } from '@/hooks/use-media-devices';
-import MicLevelBar from './MicLevelBar';
+import MicLevelBar from '../MicLevelBar';
 
 interface DeviceSettingsDialogProps {
   open: boolean;

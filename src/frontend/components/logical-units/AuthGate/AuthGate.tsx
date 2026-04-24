@@ -1,6 +1,8 @@
-import { useEffect, type ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { type ReactNode, useEffect } from 'react';
+import { ProfileCompletionGate } from '@/components/logical-units/ProfileCompletionGate';
 import { Button } from '@/components/ui/button/button';
+import { ApiAuthProvider } from '@/contexts/api-auth';
 
 function FullPageMessage({ title, description }: { title: string; description: string }) {
   return (
@@ -57,5 +59,9 @@ export default function AuthGate({ children }: AuthGateProps) {
     return <FullPageMessage title='Redirecting to login' description='Taking you to Auth0 to continue...' />;
   }
 
-  return children;
+  return (
+    <ApiAuthProvider>
+      <ProfileCompletionGate>{children}</ProfileCompletionGate>
+    </ApiAuthProvider>
+  );
 }

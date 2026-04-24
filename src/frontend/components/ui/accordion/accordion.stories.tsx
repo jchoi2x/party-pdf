@@ -6,8 +6,7 @@ const items = [
   {
     value: 'item-1',
     title: 'What is Party PDF?',
-    content:
-      'Party PDF is a collaborative space for organizing, annotating, and sharing PDF documents with your team.',
+    content: 'Party PDF is a collaborative space for organizing, annotating, and sharing PDF documents with your team.',
   },
   {
     value: 'item-2',
@@ -30,7 +29,7 @@ const meta = {
     layout: 'centered',
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className='w-[560px] max-w-[90vw]'>
         <Story />
       </div>
@@ -44,7 +43,7 @@ type Story = StoryObj<typeof meta>;
 export const Single: Story = {
   render: () => (
     <Accordion type='single' collapsible>
-      {items.map(item => (
+      {items.map((item) => (
         <AccordionItem key={item.value} value={item.value}>
           <AccordionTrigger>{item.title}</AccordionTrigger>
           <AccordionContent>{item.content}</AccordionContent>
@@ -57,7 +56,7 @@ export const Single: Story = {
 export const Multiple: Story = {
   render: () => (
     <Accordion type='multiple' defaultValue={['item-1', 'item-3']}>
-      {items.map(item => (
+      {items.map((item) => (
         <AccordionItem key={item.value} value={item.value}>
           <AccordionTrigger>{item.title}</AccordionTrigger>
           <AccordionContent>{item.content}</AccordionContent>
@@ -70,7 +69,7 @@ export const Multiple: Story = {
 export const DefaultOpen: Story = {
   render: () => (
     <Accordion type='single' defaultValue='item-2' collapsible>
-      {items.map(item => (
+      {items.map((item) => (
         <AccordionItem key={item.value} value={item.value}>
           <AccordionTrigger>{item.title}</AccordionTrigger>
           <AccordionContent>{item.content}</AccordionContent>
@@ -83,7 +82,7 @@ export const DefaultOpen: Story = {
 export const NoCollapse: Story = {
   render: () => (
     <Accordion type='single' defaultValue='item-1' collapsible={false}>
-      {items.map(item => (
+      {items.map((item) => (
         <AccordionItem key={item.value} value={item.value}>
           <AccordionTrigger>{item.title}</AccordionTrigger>
           <AccordionContent>{item.content}</AccordionContent>

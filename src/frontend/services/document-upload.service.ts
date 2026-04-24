@@ -1,4 +1,4 @@
-import { HttpClient } from '@/services/http.client';
+import type { HttpClient } from '@/services/http.client';
 
 interface UploadUrlResponse {
   url: string;
@@ -16,36 +16,31 @@ export type TUploadFileArgs = {
   url: string;
   file: File;
   onProgress: (pct: number) => void;
-}
+};
 export type TGetUploadUrlArgs = {
   filename: string;
   contentType: string;
-}
+};
 
 export type TExecuteUploadFlowArgs = {
   file: File;
   contentType: string;
   filename: string;
   onProgress: (pct: number) => void;
-}
+};
 
 export class DocumentUploadService {
-  private http = new HttpClient(`${window.location.origin}/api`);
+  constructor(private readonly http: HttpClient) {}
 
   async getUploadUrl(args: TGetUploadUrlArgs) {
-    const {
-      filename, contentType = 'application/pdf'
-    } = args;
+    const { filename, contentType = 'application/pdf' } = args;
 
-    const result = await this.http.get<UploadUrlResponse>(
-      `/upload-url`,
-      {
-        params: {
-          filename,
-          contentType,
-        },
+    const result = await this.http.get<UploadUrlResponse>(`/upload-url`, {
+      params: {
+        filename,
+        contentType,
       },
-    );
+    });
 
     if (!result.ok || typeof result.data === 'string') {
       throw new Error('Failed to get upload URL');
@@ -94,13 +89,11 @@ export class DocumentUploadService {
     const { url: uploadUrl, id } = await this.getUploadUrl({ filename, contentType });
     await this.uploadFile({ url: uploadUrl, file, onProgress });
     const { url: downloadUrl } = await this.getDownloadUrl(id);
-    return { 
+    return {
       id,
       filename,
       contentType,
-      url: downloadUrl 
+      url: downloadUrl,
     };
   }
-
 }
-

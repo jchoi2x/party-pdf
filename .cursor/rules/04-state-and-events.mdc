@@ -1,0 +1,27 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-state-events" title="Cursor Rule — State & Events" />
+
+# State & Event Rule
+
+## Principles
+
+1. **Top-down control** — lift state unless 100 % local.
+2. **Compose, don't await** — heavy async belongs in parent logic or effects.
+3. **No custom DOM events** — stick to React props / context.
+
+## Enforcements
+
+- Event handler bodies must be **sync**; if an async fn is required:
+  ```ts
+  const handleClick = () => {
+    void onSubmitAsync();
+  };
+  ```
+- Re-export any internal state hook to allow external control if needed.

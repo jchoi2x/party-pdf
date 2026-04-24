@@ -1,0 +1,78 @@
+---
+description: Enforce logical-units component structure and export conventions
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-logical-units-structure" title="Cursor Rule — Logical Units Structure" />
+
+# Logical Units Structure
+
+Use this rule for all components in `src/frontend/components/logical-units`.
+
+## Component file contract
+
+- Each component `*.tsx` file must export one and only one React component.
+- Component files must use named exports only.
+- Do not use default exports in component files.
+
+## Required directory layout
+
+- A component must live in a directory named after the component.
+- The component directory must contain:
+  - `<ComponentName>.tsx`
+  - `index.ts`
+- The barrel file must re-export from the component file using named export syntax:
+  - `export * from './<ComponentName>'`
+
+## Owned child components
+
+- If a component owns child components, place them under:
+  - `<ComponentName>/components/<ChildName>/`
+- Each child component directory follows the same contract:
+  - `<ChildName>.tsx`
+  - `index.ts`
+- This structure is recursive for nested ownership:
+  - `<ChildName>/components/<GrandChildName>/...`
+
+## Types and interfaces
+
+- If a component defines component-local types or interfaces, place them in:
+  - `<ComponentName>.types.ts`
+- The `*.types.ts` file must export those declarations.
+- The component file should import those types from the colocated `*.types.ts` file.
+
+## Optional files
+
+- Styles are optional. If present, keep them colocated with the component
+  (for example `<ComponentName>.styles.scss`).
+
+## Example structure
+
+```text
+src/frontend/components/logical-units/
+|-- VideoPanel/
+|   |-- VideoPanel.tsx
+|   |-- VideoPanel.types.ts
+|   |-- VideoPanel.styles.scss
+|   |-- index.ts
+|   `-- components/
+|       `-- DeviceSettingsDialog/
+|           |-- DeviceSettingsDialog.tsx
+|           |-- DeviceSettingsDialog.types.ts
+|           |-- DeviceSettingsDialog.styles.scss
+|           |-- index.ts
+|           `-- components/
+|               `-- MicLevelBar/
+|                   |-- MicLevelBar.tsx
+|                   |-- MicLevelBar.types.ts
+|                   |-- MicLevelBar.styles.scss
+|                   |-- index.ts
+|                   `-- components/
+|                       `-- Bar/
+|                           |-- Bar.tsx
+|                           |-- Bar.styles.scss
+|                           |-- Bar.types.ts
+|                           `-- index.ts
+```

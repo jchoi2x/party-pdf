@@ -7,18 +7,22 @@ import { getStoredUserName, getUserColor } from '@/lib/username';
 
 const PARTY_HOST = `${window.location.host}/api`;
 
+export type PartyConnectionParams = Record<string, string>;
+
 export function setupYjsCollaboration(
   annotationManager: Core.AnnotationManager,
   roomId: string,
   providerRef: MutableRefObject<InstanceType<typeof YProvider> | null>,
   setCollaborators: Dispatch<SetStateAction<Collaborator[]>>,
   setConnectionStatus: Dispatch<SetStateAction<ConnectionStatus>>,
+  getPartyParams?: () => Promise<PartyConnectionParams>,
 ) {
   try {
     const ydoc = new Y.Doc();
 
     const provider = new YProvider(PARTY_HOST, roomId, ydoc, {
       party: 'room',
+      ...(getPartyParams ? { params: getPartyParams } : {}),
     });
     providerRef.current = provider;
 
@@ -156,7 +160,6 @@ export function setupYjsCollaboration(
     }
 
     provider.on('synced', handleSynced);
-
   } catch (e) {
     console.warn('Real-time collaboration setup failed:', e);
     setConnectionStatus('disconnected');

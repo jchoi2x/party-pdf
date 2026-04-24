@@ -1,0 +1,49 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-biome" title="Cursor Rule — Biome & Style" />
+
+# Biome & Style Rule
+
+## Purpose
+
+Guarantee every commit passes the shared `biome.json`.
+
+## Trigger
+
+On file creation _or_ save of `.ts`, `.tsx`, `.js`, `.jsx`.
+
+## Must-Pass Rules (high-level)
+
+```bash
+bun run biome:check
+bun run biome:lint
+bun run biome:format
+bun run biome:ci
+```
+
+## Auto-Fix
+
+| Violation                        | Fix                                                  |
+| -------------------------------- | ---------------------------------------------------- |
+| Missing arrow-fn component       | Convert to `const X: FC = () => {}`.                 |
+| Unused import                    | Remove it.                                           |
+| `console.log`                    | Replace with `console.warn` (or delete).             |
+| Inline `style=` in JSX           | Suggest `sx` prop (MUI) or styled-component wrapper. |
+| Type-only import used at runtime | Rewrite to `import type`.                            |
+
+**Post-generation hook:** After Cursor creates or edits files, automatically run
+
+```bash
+bun run biome:lint
+bun run biome:format
+```
+
+so the touched files are formatted and lint-errors are auto-corrected.
+
+---

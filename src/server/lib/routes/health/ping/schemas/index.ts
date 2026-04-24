@@ -1,3 +1,2 @@
-export { PingResponseSchema, type PingResponse } from './response.schema';
-export { PingErrorSchema, type PingError } from './error.schema';
-
+export { type PingError, PingErrorSchema } from './error.schema';
+export { type PingResponse, PingResponseSchema } from './response.schema';

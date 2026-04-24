@@ -29,6 +29,8 @@ function App() {
       clientId={auth0Config.clientId}
       authorizationParams={{
         redirect_uri: window.location.origin,
+        scope: 'openid profile email',
+        ...(auth0Config.audience ? { audience: auth0Config.audience } : {}),
       }}
       onRedirectCallback={(appState) => {
         const returnTo = (appState as { returnTo?: string } | undefined)?.returnTo ?? '/';

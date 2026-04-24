@@ -1,0 +1,103 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-component-scaffold" title="Cursor Rule — Component Scaffold" />
+
+# Stateless Component Scaffold Rule
+
+## Trigger
+
+Creating any new directory under:
+
+- `src/frontend/components/core/**`
+- `src/frontend/components/common/**`
+- `src/frontend/components/logical-units/**`
+
+## Generated Files
+
+| File                      | Purpose                                                          |
+| ------------------------- | ---------------------------------------------------------------- |
+| `MyComponent.tsx`         | Arrow-function React component (stateless)                       |
+| `MyComponent.stories.tsx` | Storybook demo (wrapped in ThemeProvider) **+** interaction test |
+| `MyComponent.test.tsx`    | Unit test (Vitest)                                               |
+| `MyComponent.styles.ts`   | styled-components (theme-aware)                                  |
+| `index.ts`                | Barrel export                                                    |
+
+## Template Snippets
+
+`MyComponent.tsx`
+
+```tsx
+/** Renders <MyComponent>. */
+import type { FC } from "react";
+import { memo } from "react";
+import type { MyComponentProps } from "./MyComponent.types";
+import { Box } from "@/components/ui/box";
+import { Typography } from "@/components/ui/typography";
+
+export const MyComponent: FC<MyComponentProps> = memo(({ title }) => (
+  <Box data-testid="my-component">
+    <Typography variant="h6">{title}</Typography>
+  </Box>
+));
+```
+
+`MyComponent.types.ts`
+
+```ts
+export interface MyComponentProps {
+  /**
+   * Localized title text.
+   * Provided by parent for i18n.
+   */
+  title: string;
+}
+```
+
+`index.ts`
+
+```ts
+export * from "./MyComponent";
+```
+
+`MyComponent.stories.tsx`
+
+```tsx
+import { ThemeProvider } from "@mui/material/styles";
+import { theme } from "@/themes";
+import type { Meta } from "@storybook/react";
+import { MyComponent } from "./MyComponent";
+
+export default {
+  title: "Core/MyComponent",
+  component: MyComponent,
+  decorators: [
+    (Story) => (
+      <ThemeProvider theme={theme}>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+} satisfies Meta<typeof MyComponent>;
+
+export const Basic = {
+  args: { title: "Hello 🌎" },
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    await expect(c.getByText(/hello/i)).toBeVisible();
+  },
+};
+```
+
+## **Constraints**
+
+- **No internal async/await** in event handlers.
+- All styling via MUI sx or styled.
+- Expose _all_ state via props **or** export a custom hook.
+- JSDoc for every public prop / function, **no** type annotations inside comments.
+- Consume design tokens via `useTheme` or the injected `theme` object from `src/themes`; never hard-code colors or spacings.

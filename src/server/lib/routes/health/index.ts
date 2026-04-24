@@ -7,4 +7,3 @@ export const healthRouter = new OpenAPIHono<{ Bindings: Env }>();
 healthRouter.route('', pingRouter);
 
 export * from './ping';
-

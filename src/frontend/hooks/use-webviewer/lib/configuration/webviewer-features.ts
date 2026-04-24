@@ -1,8 +1,5 @@
 import type WebViewer from '@pdftron/webviewer';
-import {
-  WEBVIEWER_FEATURES_TO_DISABLE,
-  WEBVIEWER_FEATURES_TO_ENABLE,
-} from '@/constants/webviewer/features';
+import { WEBVIEWER_FEATURES_TO_DISABLE, WEBVIEWER_FEATURES_TO_ENABLE } from '@/constants/webviewer/features';
 
 type WebViewerInstance = Awaited<ReturnType<typeof WebViewer>>;
 

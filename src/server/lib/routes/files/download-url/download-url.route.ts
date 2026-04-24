@@ -6,4 +6,3 @@ import { downloadUrlHandler } from './download-url.handler';
 export const downloadUrlRouter = new OpenAPIHono<{ Bindings: Env }>();
 
 downloadUrlRouter.openapi(downloadUrlConfig, downloadUrlHandler);
-

@@ -1,0 +1,59 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-test-story" title="Cursor Rule — Tests & Storybook" />
+
+# Testing & Storybook Rule
+
+## Storybook
+
+- Every component **must** ship at least one story.
+- Use controls to expose primary props (`argTypes`).
+
+### Environment
+
+- When these designer rules are active, Storybook **must** be running on port **6006**.
+  - If port 6006 is free, start it with:
+    ```bash
+    bun run storybook
+    ```
+  - If port 6006 is occupied, assume an existing instance is running.
+
+## Tests
+
+| Layer       | Tool              | Minimum                             |
+| ----------- | ----------------- | ----------------------------------- |
+| Unit        | Vitest            | ≥ 1 test per public function/branch |
+| Interaction | Storybook play fn | Validate core UX paths              |
+
+### Example Interaction Test
+
+```tsx
+play: async ({ canvasElement }) => {
+  const c = within(canvasElement);
+  await userEvent.click(c.getByRole("button"));
+  await expect(c.getByText(/submitted/i)).toBeVisible();
+};
+```
+
+## **CI Gate**
+
+- Lint + tests must pass before merge.
+- Chromatic (or equivalent) snapshot diff blocks if visual regression.
+
+---
+
+#### How to use
+
+1. **Copy each block into its own file** under `cursor-rules/`.
+2. Commit and sync — Cursor will pick them up automatically.
+3. Because each file is short, no individual rule exceeds the 350-line ceiling.
+
+Let me know if you'd like tweaks or additional rule files!
+
+**Auto-lint:** Cursor will execute `eslint --fix <edited-files>` after every change so tests run on clean code.
