@@ -17,11 +17,11 @@ export class UserService {
   constructor(private readonly http: HttpClient) {}
 
   async getMe() {
-    return this.http.get<JwtClaimsPayload>('/me');
+    return this.http.get<JwtClaimsPayload>('/api/me');
   }
 
   async updateProfile(body: UpdateProfileBody) {
-    return this.http.patch<UpdateProfileResponse, { error: string }>('/me/profile', {
+    return this.http.patch<UpdateProfileResponse, { error: string }>('/api/me/profile', {
       body: JSON.stringify({
         givenName: body.givenName,
         familyName: body.familyName,
