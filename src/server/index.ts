@@ -30,3 +30,4 @@ showRoutes(app);
 
 export default withSentry(app);
 export { Room } from './lib/durable';
+export { Document } from './lib/durable/document/document.do';

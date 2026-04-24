@@ -15,12 +15,22 @@
       ],
       "tag": "v1"
     },
+    {
+      "new_sqlite_classes": [
+        "Document"
+      ],
+      "tag": "v1"
+    },
   ],
   "durable_objects": {
     "bindings": [
       {
         "class_name": "Room",
         "name": "ROOM"
+      },
+      {
+        "class_name": "Document",
+        "name": "DOC"
       }
     ]
   },
