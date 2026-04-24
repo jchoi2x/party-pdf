@@ -1,14 +1,13 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
-
-import { requireAuth0Jwt } from '../auth/require-auth0-jwt';
+import { requireAuth0Jwt } from '../middleware/auth';
 import { filesRouter } from './files';
 import { healthRouter } from './health';
 import { meRouter } from './me';
 import { videosRouter } from './video';
 
-export const apiApp = new OpenAPIHono<{ Bindings: Env }>().basePath('/api');
+export const apiApp = new OpenAPIHono<{ Bindings: Env }>();
 
 apiApp.use(
   '*',
@@ -37,14 +36,8 @@ apiApp.doc('/swagger-ui/openapi.json', {
   ],
 });
 
-apiApp.use('*', async (c, next) => {
-  if (c.req.method === 'OPTIONS') {
-    await next();
-    return;
-  }
-  return requireAuth0Jwt(c, next);
-});
 
+apiApp.use(requireAuth0Jwt);
 apiApp.route('', healthRouter);
 apiApp.route('', meRouter);
 apiApp.route('', filesRouter);

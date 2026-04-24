@@ -1,6 +1,6 @@
 import type { RouteHandler } from '@hono/zod-openapi';
 
-import { isAuth0ManagementConfigured, patchAuth0UserNames } from '../../auth0/management-api';
+import { isAuth0ManagementConfigured, patchAuth0UserNames } from '../../utils/management-api';
 
 import type { PatchMeProfileConfig } from './patch-me-profile.config';
 

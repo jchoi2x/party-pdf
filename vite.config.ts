@@ -35,6 +35,10 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  build: {
+    minify: process.env.NODE_ENV === "production",
+    sourcemap: process.env.NODE_ENV === "development",
+  },
   plugins: [
     react(),
     tailwindcss(),

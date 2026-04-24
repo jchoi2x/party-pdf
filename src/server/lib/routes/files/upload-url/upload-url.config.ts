@@ -4,7 +4,7 @@ import { UploadUrlErrorSchema, UploadUrlQuerySchema, UploadUrlResponseSchema } f
 
 export const uploadUrlConfig = createRoute({
   method: 'get',
-  path: '/upload-url',
+  path: '/docs/upload-url',
   tags: ['File'],
   request: {
     query: UploadUrlQuerySchema,

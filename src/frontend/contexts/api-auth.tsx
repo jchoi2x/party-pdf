@@ -32,7 +32,7 @@ export function ApiAuthProvider({ children }: { children: ReactNode }) {
 
   const httpClient = useMemo(
     () =>
-      new HttpClient(`${window.location.origin}/api`, {
+      new HttpClient(`${window.location.origin}`, {
         getAccessToken,
       }),
     [getAccessToken],

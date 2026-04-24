@@ -1,5 +1,5 @@
 export interface FetchV2RequestInit extends RequestInit {
-  params?: Record<string, string>;
+  params?: Record<string, string | string[] | number | boolean | null | undefined>;
   /**
    * Called while uploading streaming request bodies (e.g. File/Blob uploads).
    */
@@ -10,20 +10,26 @@ export type FetchV2Response<SuccessType = unknown, FailureType = unknown> =
   | { ok: true; status: number; headers: Headers; data: SuccessType | string }
   | { ok: false; status: number; headers: Headers; data: FailureType };
 
-const getFullUrl = (baseUrl: string, url: string, params: Record<string, string>) => {
+const getFullUrl = (baseUrl: string, url: string, params: Record<string, string | string[] | number | boolean | null | undefined>) => {
   if (url.startsWith('http')) {
     return url;
   }
-  const urlStr = url.startsWith('http') ? url : `${baseUrl}${url}`;
-  const _url = new URL(urlStr);
-  // parse search to object
-  const _currentSearch = _url.search ? new URLSearchParams(_url.search) : new URLSearchParams();
-  const currentSearch = Object.fromEntries([..._currentSearch]);
-
-  _url.search = new URLSearchParams({
-    ...currentSearch,
-    ...params,
-  }).toString();
+  const _url = new URL(url, baseUrl);
+  const searchParams = new URLSearchParams(_url.search);
+  for (const [key, value] of Object.entries(params || {})) {
+    searchParams.delete(key);
+    if (value == null) {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        searchParams.append(key, item);
+      }
+      continue;
+    }
+    searchParams.append(key, String(value));
+  }
+  _url.search = searchParams.toString();
   return _url.toString();
 };
 

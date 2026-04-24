@@ -15,6 +15,15 @@ import { getDocument } from '@/lib/indexeddb';
 import { getStoredUserName } from '@/lib/username';
 import { configureWebViewerInstance, getWebViewerConstructorOptions } from './lib/configuration';
 
+type PacketDocumentsResponse = {
+  data: Array<{
+    id: string;
+    packet_id: string;
+    filename: string;
+    download_url: string;
+  }>;
+};
+
 interface UseWebViewerOptions {
   id: string;
   isDark: boolean;
@@ -42,6 +51,7 @@ export function useWebViewer({
 }: UseWebViewerOptions) {
   const { apiFetch, getAccessToken } = useApiAuth();
   const viewerInitialized = useRef(false);
+  const collaborationInitialized = useRef(false);
   const [docName, setDocName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -61,35 +71,33 @@ export function useWebViewer({
 
     async function init() {
       try {
-        let docUrl: string | null = null;
+        let initialDoc: string | string[] | null = null;
         let localBlob: Blob | null = null;
         let name = '';
+        let packetDocs: PacketDocumentsResponse['data'] = [];
 
-        const cached = sessionStorage.getItem(id);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          docUrl = parsed.downloadUrl;
-          name = parsed.name;
-          console.debug('Cached document found:', docUrl, name);
-        } else {
-          try {
-            const res = await apiFetch(`${variables.apiBase}/download-url/${id}`);
-            if (!res.ok) throw new Error('Failed to fetch download URL');
-            const data = await res.json();
-            docUrl = data.url;
-            name = 'Shared Document';
-            console.debug('Cloud document fetched:', docUrl, name);
-          } catch (cloudErr) {
-            console.warn('Cloud download failed, trying local fallback:', cloudErr);
-            const localDoc = await getDocument(id);
-            if (!localDoc) {
-              toast.error('Document not found. Please upload the PDF again.');
-              navigate('/');
-              return;
-            }
-            localBlob = localDoc.blob;
-            name = localDoc.name;
+        try {
+          const res = await apiFetch(`${variables.apiBase}/docs/by-packet-id/${id}`);
+          if (!res.ok) throw new Error('Failed to fetch packet documents');
+          const data = (await res.json()) as PacketDocumentsResponse;
+          packetDocs = data.data ?? [];
+          if (packetDocs.length > 0) {
+            initialDoc = packetDocs.map((doc) => doc.download_url);
+            name = packetDocs[0]?.filename ?? 'Shared Documents';
           }
+        } catch (cloudErr) {
+          console.warn('Cloud packet fetch failed, trying local fallback:', cloudErr);
+        }
+
+        if (!initialDoc) {
+          const localDoc = await getDocument(id);
+          if (!localDoc) {
+            toast.error('Document not found. Please upload the PDF again.');
+            navigate('/');
+            return;
+          }
+          localBlob = localDoc.blob;
+          name = localDoc.name;
         }
 
         setDocName(name);
@@ -97,7 +105,7 @@ export function useWebViewer({
         if (!viewerRef.current || viewerInitialized.current) return;
         viewerInitialized.current = true;
 
-        const instance = await WebViewer(getWebViewerConstructorOptions(docUrl), viewerRef.current);
+        const instance = await WebViewer(getWebViewerConstructorOptions(initialDoc), viewerRef.current);
 
         viewerInstanceRef.current = instance;
         // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
@@ -119,16 +127,19 @@ export function useWebViewer({
         annotationManager.setCurrentUser(getStoredUserName() || 'Guest');
 
         documentViewer.addEventListener('documentLoaded', () => {
-          setIsLoading(false);
-          setupYjsCollaboration(
-            annotationManager,
-            id,
-            providerRef,
-            setCollaborators,
-            setConnectionStatus,
-            getPartyParams,
-          );
-          setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
+          if (!collaborationInitialized.current) {
+            collaborationInitialized.current = true;
+            setIsLoading(false);
+            setupYjsCollaboration(
+              annotationManager,
+              id,
+              providerRef,
+              setCollaborators,
+              setConnectionStatus,
+              getPartyParams,
+            );
+            setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
+          }
         });
 
         if (localBlob) {

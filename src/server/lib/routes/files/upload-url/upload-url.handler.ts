@@ -1,19 +1,18 @@
-import type { RouteHandler } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 
-import { initS3Client } from '../../../utils/s3';
+type Ctx = Context<
+  { Bindings: Env },
+  '/docs/upload-url',
+  {
+    in: { query: { filenames: string[]; contentType: string } };
+    out: { query: { filenames: string[]; contentType: string } };
+  }
+>;
 
-import type { UploadUrlConfig } from './upload-url.config';
+export const uploadUrlHandler = async (c: Ctx) => {
+  const jwtPayload = c.get('jwtPayload');
 
-export const uploadUrlHandler: RouteHandler<UploadUrlConfig, { Bindings: Env }> = async (c) => {
-  const { filename, contentType } = c.req.valid('query');
-
-  const { generateUploadUrl } = initS3Client();
-
-  const { url, id } = await generateUploadUrl({
-    prefix: 'collab',
-    contentType,
-    name: filename,
-  });
-
-  return c.json({ url, id }, 200);
+  const id = c.env.DOC.idFromName(jwtPayload.sub as string);
+  const stub = c.env.DOC.get(id);
+  return stub.fetch(c.req.raw.clone());
 };

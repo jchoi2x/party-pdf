@@ -82,7 +82,9 @@ export const requireAuth0Jwt = createMiddleware<{ Bindings: Env }>(async (c, nex
     const payload = await verifyAuth0AccessToken(c.env, token);
     c.set('jwtPayload', payload);
     await next();
-  } catch {
+  } catch (e){
+    console.error('requireAuth0Jwt', e);
+
     return c.json({ error: 'Invalid or expired access token.' }, 401);
   }
 });

@@ -8,9 +8,11 @@ if (!import.meta.env.WEBVIEWER_CDN) {
 export const variables = {
   apiBase: `${window.location.origin}/api`,
   apryseLicense: import.meta.env.APRYSE_LICENSE,
+  agGridLicenseKey: import.meta.env.AG_GRID_LICENSE_KEY,
   webviewerCdn: import.meta.env.WEBVIEWER_CDN,
   auth0Domain: import.meta.env.AUTH0_DOMAIN,
   auth0ClientId: import.meta.env.AUTH0_CLIENT_ID,
   auth0Audience: import.meta.env.AUTH0_AUDIENCE,
 };
+(window as any).variables = variables;
 export const vars = variables;

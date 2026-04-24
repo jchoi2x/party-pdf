@@ -81,8 +81,15 @@ export const initS3Client = () => {
     const url = await getSignedUrl(s3, cmd, {
       expiresIn,
     });
+    const filename = name ?? `file.pdf`;
 
-    return { url, id: uuid };
+    return { 
+      url, 
+      id: uuid, 
+      filename,
+      bucketPath: fPath,
+      downloadUrl: getDownloadUrl({ prefix, id: uuid })
+    };
   }
 
   function getDownloadUrl({ id, prefix = 'rendercv' }: { id: string; prefix?: string }) {

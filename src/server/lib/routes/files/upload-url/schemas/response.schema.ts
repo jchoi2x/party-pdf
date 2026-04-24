@@ -1,8 +1,15 @@
 import { z } from '@hono/zod-openapi';
 
 export const UploadUrlResponseSchema = z.object({
-  url: z.string().default('http://localhost:3000/api/upload-url').describe('The pre-signed upload URL'),
-  id: z.string().describe('The id of the uploaded file you can use to fetch the download url'),
+  data: z.array(
+    z.object({
+      id: z.string().describe('Generated document id'),
+      filename: z.string().describe('Original filename'),
+      url: z.string().describe('Pre-signed upload URL'),
+      bucketPath: z.string().describe('R2 object path'),
+    }),
+  ).describe('Pre-signed upload URLs for each requested file'),
+  id: z.string().describe('Packet id for the uploaded files batch'),
 });
 
 export type UploadUrlResponse = z.infer<typeof UploadUrlResponseSchema>;
