@@ -28,7 +28,6 @@ export class Document extends DurableObject<Env> {
   }
 
   private initTable(): void {
-    this.doSql.exec("DROP TABLE IF EXISTS documents");
     this.doSql.exec(
       "CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, packet_id TEXT NOT NULL, filename TEXT NOT NULL, url TEXT NOT NULL, download_url TEXT NOT NULL, bucket_path TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'ready')))",
     );
@@ -69,17 +68,23 @@ export class Document extends DurableObject<Env> {
 
     // get all the users documents
     this.app.get('/docs', async (c) => {
-      const { limit = 10, page = 1 } = c.req.query() as unknown as { limit: number, page: number };
+    
+      const { limit: _l = 10, page: _p = 1 } = c.req.query() as unknown as { limit: number, page: number };
+      const limit = parseInt(_l as unknown as string, 10);
+      const page = parseInt(_p as unknown as string, 10);
+
+      console.log('docs', { limit, page });
       const offset = (page - 1) * limit;
 
-      const total = this.doSql.exec('SELECT COUNT(*) FROM documents');
-      const totalPages = Math.ceil(parseInt(total as any, 10) / limit);
+      const totalQuery = this.doSql.exec('SELECT COUNT(*) FROM documents');
+      const totalCount = Object.values(totalQuery.one())[0];
+      const totalPages = Math.ceil(parseInt(totalCount as any, 10) / limit);
 
-      const data = this.doSql.exec('SELECT * FROM documents ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      const data = this.doSql.exec('SELECT * FROM documents ORDER BY created_at DESC LIMIT ? OFFSET ?', limit, offset);
       const docs = data.toArray().map((d) => this.toDocumentRecord(d as any))
 
     
-      return c.json({ data: docs, total, totalPages, page, limit }, 200);
+      return c.json({ data: docs, total: totalCount, totalPages, page, limit }, 200);
     });
   }
 
