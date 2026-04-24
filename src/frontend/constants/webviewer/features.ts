@@ -22,6 +22,6 @@ export const WEBVIEWER_FEATURES_TO_DISABLE = [
 export const WEBVIEWER_FEATURES_TO_ENABLE = [
   'SavedSignaturesTab',
   'MultiTab',
-  'ComparePages',
+  // 'ComparePages',
   'Initials',
 ] as const satisfies readonly WebViewerFeatureName[];

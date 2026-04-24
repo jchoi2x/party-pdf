@@ -6,8 +6,33 @@ import type { Collaborator, ConnectionStatus, CursorPosition } from '@/lib/docum
 import { getStoredUserName, getUserColor } from '@/lib/username';
 
 const PARTY_HOST = `${window.location.host}/api`;
+const XFDF_HEADER = '<?xml version="1.0" encoding="UTF-8" ?>';
+const XFDF_OPEN = '<xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">';
+const XFDF_CLOSE = '</xfdf>';
 
 export type PartyConnectionParams = Record<string, string>;
+
+function wrapAnnotationNodeAsXfdf(annotationNodeXml: string): string {
+  if (annotationNodeXml.trimStart().startsWith('<?xml')) {
+    return annotationNodeXml;
+  }
+  return `${XFDF_HEADER}${XFDF_OPEN}<annots>${annotationNodeXml}</annots>${XFDF_CLOSE}`;
+}
+
+function splitXfdfIntoAnnotationEntries(xfdf: string): Array<{ id: string; xfdfNode: string }> {
+  const parsed = new DOMParser().parseFromString(xfdf, 'text/xml');
+  const annotsNode = parsed.querySelector('annots');
+  if (!annotsNode) return [];
+
+  const serializer = new XMLSerializer();
+  return Array.from(annotsNode.children)
+    .map((node) => {
+      const id = node.getAttribute('name');
+      if (!id) return null;
+      return { id, xfdfNode: serializer.serializeToString(node) };
+    })
+    .filter((entry): entry is { id: string; xfdfNode: string } => Boolean(entry));
+}
 
 export function setupYjsCollaboration(
   annotationManager: Core.AnnotationManager,
@@ -19,6 +44,7 @@ export function setupYjsCollaboration(
 ) {
   try {
     const ydoc = new Y.Doc();
+    (window as any).ydoc = ydoc;
 
     const provider = new YProvider(PARTY_HOST, roomId, ydoc, {
       party: 'room',
@@ -38,6 +64,8 @@ export function setupYjsCollaboration(
     // the observe handles real-time updates from other users.
     let initialSyncComplete = false;
 
+
+
     annotationsMap.observe(async (event) => {
       // Skip everything until the initial sync is done — handleSynced handles that
       if (!initialSyncComplete) return;
@@ -48,17 +76,20 @@ export function setupYjsCollaboration(
       // to close the race window between iterations.
       isSyncing = true;
       try {
+        const deletes = [];
         for (const [key, change] of event.changes.keys) {
           if (change.action === 'delete') {
-            const deleteXfdf = `<?xml version="1.0" encoding="UTF-8" ?><xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve"><fields /><delete><id>${key}</id></delete></xfdf>`;
-            await annotationManager.importAnnotationCommand(deleteXfdf);
+            const deleteXfdf = `<delete><id>${key}</id></delete>`;
+            deletes.push(deleteXfdf);
           } else {
             const xfdf = annotationsMap.get(key);
             if (xfdf) {
-              await annotationManager.importAnnotations(xfdf);
+              await annotationManager.importAnnotations(wrapAnnotationNodeAsXfdf(xfdf));
             }
           }
         }
+        const del = `${XFDF_HEADER}${XFDF_OPEN}<fields />${deletes.join('')}${XFDF_CLOSE}`;
+        await annotationManager.importAnnotationCommand(del);
       } catch (e) {
         console.error('Failed to apply remote annotation:', e);
       } finally {
@@ -71,31 +102,39 @@ export function setupYjsCollaboration(
       async (annotations: Core.Annotations.Annotation[], action: string, { imported }: { imported: boolean }) => {
         if (imported || isSyncing) return;
         try {
-          for (const annotation of annotations) {
-            const annotId = annotation.Id;
-            if (!annotId) continue;
-
-            if (action === 'delete') {
-              ydoc.transact(() => {
-                annotationsMap.delete(annotId);
-              }, 'local');
-            } else {
-              const xfdf = await annotationManager.exportAnnotations({
-                annotList: [annotation],
-                useDisplayAuthor: true,
+          if (action === 'delete') {
+            ydoc.transact(() => {
+              annotations.forEach((annot) => {
+                if (annot.Id) annotationsMap.delete(annot.Id);
               });
-              ydoc.transact(() => {
-                annotationsMap.set(annotId, xfdf);
-              }, 'local');
-            }
+            }, 'local');
+          } else {
+            const annots = annotations.filter((annot) => annot && !!annot.Id);
+            if (annots.length === 0) return;
+            const xfdf = await annotationManager.exportAnnotations({
+              annotList: annots,
+              widgets: false,
+              links: false,
+              fields: false,
+              useDisplayAuthor: true,
+            });
+            const xfdfs = splitXfdfIntoAnnotationEntries(xfdf);
+
+            ydoc.transact(() => {
+              xfdfs.forEach(({ id, xfdfNode }) => annotationsMap.set(id, xfdfNode));
+            }, 'local');
+
           }
+
         } catch (e) {
           console.error('Failed to sync annotation:', e);
         }
       },
     );
 
-    const currentUser = getStoredUserName() || 'Guest';
+
+
+    const currentUser = getStoredUserName() || 'Guest'; 
     const currentColor = getUserColor();
     provider.awareness.setLocalStateField('user', {
       name: currentUser,
@@ -146,8 +185,9 @@ export function setupYjsCollaboration(
       if (!synced) return;
       isSyncing = true;
       try {
-        for (const [, xfdf] of annotationsMap) {
-          await annotationManager.importAnnotations(xfdf);
+        const annotXfdfs = Object.values(annotationsMap.toJSON());
+        if (annotXfdfs.length > 0) {
+          annotationManager.importAnnotations(wrapAnnotationNodeAsXfdf(annotXfdfs.join('')));
         }
       } catch (e) {
         console.error('Failed to load initial annotations:', e);

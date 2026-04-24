@@ -11,7 +11,6 @@ import { type PartyConnectionParams, setupYjsCollaboration } from '@/lib/documen
 import { setupCursorTracking } from '@/lib/document/cursor-tracking';
 import { applyWebViewerTheme } from '@/lib/document/theme';
 import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
-import { getDocument } from '@/lib/indexeddb';
 import { getStoredUserName } from '@/lib/username';
 import { configureWebViewerInstance, getWebViewerConstructorOptions } from './lib/configuration';
 
@@ -51,7 +50,6 @@ export function useWebViewer({
 }: UseWebViewerOptions) {
   const { apiFetch, getAccessToken } = useApiAuth();
   const viewerInitialized = useRef(false);
-  const collaborationInitialized = useRef(false);
   const [docName, setDocName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,8 +69,6 @@ export function useWebViewer({
 
     async function init() {
       try {
-        let initialDoc: string | string[] | null = null;
-        let localBlob: Blob | null = null;
         let name = '';
         let packetDocs: PacketDocumentsResponse['data'] = [];
 
@@ -82,30 +78,19 @@ export function useWebViewer({
           const data = (await res.json()) as PacketDocumentsResponse;
           packetDocs = data.data ?? [];
           if (packetDocs.length > 0) {
-            initialDoc = packetDocs.map((doc) => doc.download_url);
             name = packetDocs[0]?.filename ?? 'Shared Documents';
           }
         } catch (cloudErr) {
           console.warn('Cloud packet fetch failed, trying local fallback:', cloudErr);
         }
 
-        if (!initialDoc) {
-          const localDoc = await getDocument(id);
-          if (!localDoc) {
-            toast.error('Document not found. Please upload the PDF again.');
-            navigate('/');
-            return;
-          }
-          localBlob = localDoc.blob;
-          name = localDoc.name;
-        }
 
         setDocName(name);
 
         if (!viewerRef.current || viewerInitialized.current) return;
         viewerInitialized.current = true;
 
-        const instance = await WebViewer(getWebViewerConstructorOptions(initialDoc), viewerRef.current);
+        const instance = await WebViewer(getWebViewerConstructorOptions(), viewerRef.current);
 
         viewerInstanceRef.current = instance;
         // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
@@ -121,30 +106,42 @@ export function useWebViewer({
           console.warn('Failed to load i18n translations:', i18nErr);
         }
 
-        configureWebViewerInstance(instance, isDark);
 
         const { documentViewer, annotationManager } = instance.Core;
         annotationManager.setCurrentUser(getStoredUserName() || 'Guest');
 
+
+      
+        
         documentViewer.addEventListener('documentLoaded', () => {
-          if (!collaborationInitialized.current) {
-            collaborationInitialized.current = true;
-            setIsLoading(false);
-            setupYjsCollaboration(
-              annotationManager,
-              id,
-              providerRef,
-              setCollaborators,
-              setConnectionStatus,
-              getPartyParams,
-            );
-            setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
-          }
+          console.debug('Document Loaded [once]');
+          setIsLoading(false);
+          setupYjsCollaboration(
+            annotationManager,
+            id,
+            providerRef,
+            setCollaborators,
+            setConnectionStatus,
+            getPartyParams,
+          );
+          setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
+        }, { once: true });
+
+        documentViewer.addEventListener(instance.Core.DocumentViewer.Events.DOCUMENT_UNLOADED, () => {
+          console.debug('Document Unloaded');
         });
 
-        if (localBlob) {
-          instance.UI.loadDocument(localBlob, { filename: name });
-        }
+        configureWebViewerInstance(instance, isDark);
+
+
+
+        Array.from(packetDocs).forEach(({ download_url, filename, id }, index) => {
+          instance.UI.TabManager.addTab(download_url, { 
+            filename,
+            cacheKey: id,
+            setActive: index === 0,
+          });
+        })
       } catch (err) {
         console.error('WebViewer initialization failed:', err);
         toast.error('Failed to load document. Please try again.');
