@@ -14,6 +14,13 @@ export type DocumentRecord = {
   status: 'pending' | 'ready';
 };
 
+/**
+ * Durable object namespaced by user id
+ * 
+ * @export
+ * @class Document
+ * @extends {DurableObject<Env>}
+ */
 export class Document extends DurableObject<Env> {
   app = new Hono<{ Bindings: Env }>().basePath('/api');
 
@@ -67,13 +74,12 @@ export class Document extends DurableObject<Env> {
     });
 
     // get all the users documents
-    this.app.get('/docs', async (c) => {
+    this.app.get('/docs', (c) => {
     
       const { limit: _l = 10, page: _p = 1 } = c.req.query() as unknown as { limit: number, page: number };
       const limit = parseInt(_l as unknown as string, 10);
       const page = parseInt(_p as unknown as string, 10);
 
-      console.log('docs', { limit, page });
       const offset = (page - 1) * limit;
 
       const totalQuery = this.doSql.exec('SELECT COUNT(*) FROM documents');
@@ -89,7 +95,6 @@ export class Document extends DurableObject<Env> {
   }
 
   private createDocumentRecords(packet_id: string, data: { id: string, filename: string, url: string, downloadUrl: string, bucketPath: string }[] ) {
-    console.log('data', data);
     const docs = data.map((doc) => {
       return {
         id: doc.id,
@@ -103,7 +108,6 @@ export class Document extends DurableObject<Env> {
       }
     });
 
-    console.log('docs', docs);
     docs.forEach((doc) => {
       this.doSql.exec('INSERT INTO documents (id, packet_id, filename, url, download_url, created_at, status, bucket_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
         doc.id, doc.packet_id, doc.filename, doc.url, doc.download_url, doc.created_at, doc.status, doc.bucket_path 
