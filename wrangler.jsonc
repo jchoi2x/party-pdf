@@ -10,7 +10,8 @@
   "migrations": [
     {
       "new_sqlite_classes": [
-        "Room"
+        "Room",
+        "Document"
       ],
       "tag": "v1"
     },
