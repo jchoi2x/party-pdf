@@ -83,12 +83,12 @@ export const initS3Client = () => {
     });
     const filename = name ?? `file.pdf`;
 
-    return { 
-      url, 
-      id: uuid, 
+    return {
+      url,
+      id: uuid,
       filename,
       bucketPath: fPath,
-      downloadUrl: getDownloadUrl({ prefix, id: uuid })
+      downloadUrl: getDownloadUrl({ prefix, id: uuid }),
     };
   }
 

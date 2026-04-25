@@ -84,7 +84,6 @@ export function useWebViewer({
           console.warn('Cloud packet fetch failed, trying local fallback:', cloudErr);
         }
 
-
         setDocName(name);
 
         if (!viewerRef.current || viewerInitialized.current) return;
@@ -108,10 +107,8 @@ export function useWebViewer({
           console.warn('Failed to load i18n translations:', i18nErr);
         }
 
-
         const { documentViewer, annotationManager } = instance.Core;
         annotationManager.setCurrentUser(getStoredUserName() || 'Guest');
-
 
         const getDocumentId = () => {
           const doc = documentViewer.getDocument();
@@ -133,7 +130,7 @@ export function useWebViewer({
           setConnectionStatus,
           getPartyParams,
           getDocumentId,
-          Core: instance.Core
+          Core: instance.Core,
         });
 
         documentViewer.addEventListener(
@@ -152,8 +149,6 @@ export function useWebViewer({
         });
 
         configureWebViewerInstance(instance, isDark);
-
-
 
         Array.from(packetDocs)
           .reverse()

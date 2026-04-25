@@ -36,7 +36,6 @@ apiApp.doc('/swagger-ui/openapi.json', {
   ],
 });
 
-
 apiApp.use(requireAuth0Jwt);
 apiApp.route('', healthRouter);
 apiApp.route('', meRouter);

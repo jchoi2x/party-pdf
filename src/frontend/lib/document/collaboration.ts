@@ -22,7 +22,7 @@ function wrapAnnotationNodeAsXfdf(annotationNodeXml: string): string {
   return `${XFDF_HEADER}${XFDF_OPEN}<annots>${annotationNodeXml}</annots>${XFDF_CLOSE}`;
 }
 
-function splitXfdfIntoAnnotationEntries(xfdf: string): Array<{ id: string; xfdfNode: string; }> {
+function splitXfdfIntoAnnotationEntries(xfdf: string): Array<{ id: string; xfdfNode: string }> {
   const parsed = new DOMParser().parseFromString(xfdf, 'text/xml');
   const annotsNode = parsed.querySelector('annots');
   if (!annotsNode) return [];
@@ -34,7 +34,7 @@ function splitXfdfIntoAnnotationEntries(xfdf: string): Array<{ id: string; xfdfN
       if (!id) return null;
       return { id, xfdfNode: serializer.serializeToString(node) };
     })
-    .filter((entry): entry is { id: string; xfdfNode: string; } => Boolean(entry));
+    .filter((entry): entry is { id: string; xfdfNode: string } => Boolean(entry));
 }
 
 function getWidgetIdFromXfdf(xfdf: string): string | null {
@@ -71,7 +71,8 @@ export function setupYjsCollaboration({
   setCollaborators,
   setConnectionStatus,
   getPartyParams,
-  getDocumentId, documentViewer,
+  getDocumentId,
+  documentViewer,
   Core,
 }: TSetupYjsCollaborationParams) {
   const ydoc = new Y.Doc();
@@ -112,9 +113,9 @@ export function setupYjsCollaboration({
         const rawCursor = state.cursor as CursorPosition | null | undefined;
         const cursor =
           rawCursor &&
-            typeof rawCursor.pageNumber === 'number' &&
-            typeof rawCursor.x === 'number' &&
-            typeof rawCursor.y === 'number'
+          typeof rawCursor.pageNumber === 'number' &&
+          typeof rawCursor.x === 'number' &&
+          typeof rawCursor.y === 'number'
             ? rawCursor
             : null;
         if (name) {
@@ -133,7 +134,7 @@ export function setupYjsCollaboration({
   };
 
   const setupConnectionStatus = () => {
-    provider.on('status', function handleStatus({ status }: { status: string; }) {
+    provider.on('status', function handleStatus({ status }: { status: string }) {
       if (validStatuses.has(status as ConnectionStatus)) {
         setConnectionStatus(status as ConnectionStatus);
       } else {
@@ -213,10 +214,7 @@ export function setupYjsCollaboration({
         .map((id) => widgetsMap.get(id))
         .filter((xfdf): xfdf is string => Boolean(xfdf));
 
-      const hasWorkToImport =
-        annotationOperations.length > 0 ||
-        widgetImports.length > 0 ||
-        deleteWidgetIds.length > 0;
+      const hasWorkToImport = annotationOperations.length > 0 || widgetImports.length > 0 || deleteWidgetIds.length > 0;
 
       if (hasWorkToImport) {
         await documentViewer.getAnnotationsLoadedPromise();
@@ -304,7 +302,7 @@ export function setupYjsCollaboration({
     async function annotationsChangedHandler(
       annotations: Core.Annotations.Annotation[],
       action: string,
-      { imported }: { imported: boolean; },
+      { imported }: { imported: boolean },
     ) {
       const docId = getDocumentId();
       if (!docId) {
@@ -343,17 +341,19 @@ export function setupYjsCollaboration({
           }, 'local');
 
           // widgets need to be exported separately because they have a <ffield /> element along with it
-          const widgets = annots.filter((annot) => (annot instanceof Core.Annotations.WidgetAnnotation));
+          const widgets = annots.filter((annot) => annot instanceof Core.Annotations.WidgetAnnotation);
 
-          const widgetXfdfs = await Promise.all(widgets.map(async (widget) => {
-            return annotationManager.exportAnnotations({
-              annotationList: [widget],
-              widgets: true,
-              links: false,
-              fields: true,
-              useDisplayAuthor: true,
-            });
-          }));
+          const widgetXfdfs = await Promise.all(
+            widgets.map(async (widget) => {
+              return annotationManager.exportAnnotations({
+                annotationList: [widget],
+                widgets: true,
+                links: false,
+                fields: true,
+                useDisplayAuthor: true,
+              });
+            }),
+          );
           ydoc.transact(() => {
             widgetXfdfs.forEach((widgetXfdf) => {
               const widgetId = getWidgetIdFromXfdf(widgetXfdf);

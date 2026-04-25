@@ -10,7 +10,11 @@ export type FetchV2Response<SuccessType = unknown, FailureType = unknown> =
   | { ok: true; status: number; headers: Headers; data: SuccessType | string }
   | { ok: false; status: number; headers: Headers; data: FailureType };
 
-const getFullUrl = (baseUrl: string, url: string, params: Record<string, string | string[] | number | boolean | null | undefined>) => {
+const getFullUrl = (
+  baseUrl: string,
+  url: string,
+  params: Record<string, string | string[] | number | boolean | null | undefined>,
+) => {
   if (url.startsWith('http')) {
     return url;
   }

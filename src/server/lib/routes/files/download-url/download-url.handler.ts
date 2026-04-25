@@ -1,6 +1,10 @@
-import type { Context } from "hono";
+import type { Context } from 'hono';
 
-type Ctx = Context<{ Bindings: Env }, '/download-url/:uuid', { in: { param: { uuid: string; }; }; out: { param: { uuid: string; }; }; }>;
+type Ctx = Context<
+  { Bindings: Env },
+  '/download-url/:uuid',
+  { in: { param: { uuid: string } }; out: { param: { uuid: string } } }
+>;
 
 export const downloadUrlHandler = async (c: Ctx) => {
   const jwtPayload = c.get('jwtPayload');

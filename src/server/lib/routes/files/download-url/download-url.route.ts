@@ -5,4 +5,7 @@ import { downloadUrlHandler } from './download-url.handler';
 
 export const downloadUrlRouter = new OpenAPIHono<{ Bindings: Env }>();
 
-downloadUrlRouter.openapi(downloadUrlConfig, downloadUrlHandler as unknown as RouteHandler<DownloadUrlConfig, { Bindings: Env }>);
+downloadUrlRouter.openapi(
+  downloadUrlConfig,
+  downloadUrlHandler as unknown as RouteHandler<DownloadUrlConfig, { Bindings: Env }>,
+);

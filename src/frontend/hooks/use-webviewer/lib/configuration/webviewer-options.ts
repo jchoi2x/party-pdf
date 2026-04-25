@@ -3,9 +3,7 @@ import { variables } from '@/constants/vars';
 
 export type WebViewerConstructorOptions = Parameters<typeof WebViewer>[0];
 
-export function getWebViewerConstructorOptions(
-  initialDoc?: string | string[] | null,
-): WebViewerConstructorOptions {
+export function getWebViewerConstructorOptions(initialDoc?: string | string[] | null): WebViewerConstructorOptions {
   const hasMultipleDocs = Array.isArray(initialDoc) && initialDoc.length > 1;
   return {
     path: variables.webviewerCdn,

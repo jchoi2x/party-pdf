@@ -10,7 +10,6 @@ const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
 app.use(logger());
 
-
 app.route('', apiApp);
 app.get('/parties/room/:id', requireAuth0Jwt, async (c) => {
   const id = c.req.param('id');

@@ -16,7 +16,7 @@ export type DocumentRecord = {
 
 /**
  * Durable object namespaced by user id
- * 
+ *
  * @export
  * @class Document
  * @extends {DurableObject<Env>}
@@ -40,30 +40,31 @@ export class Document extends DurableObject<Env> {
     );
   }
 
-  private initRoutes(){
-
+  private initRoutes() {
     // get s3 upload urls
     this.app.get('/docs/upload-url', async (c) => {
       const filenames = c.req.queries('filenames') ?? [];
       const contentType = c.req.query('contentType') ?? 'application/pdf';
       console.log('upload-url', { filenames, contentType });
       const jwtPayload = c.get('jwtPayload');
-    
+
       const { generateUploadUrl } = initS3Client();
-    
+
       const packet_id = crypto.randomUUID();
 
-      const data = await Promise.all(filenames.map((filename) => {
-        const prefix = `${jwtPayload.sub as string}/${packet_id}`;
-        return generateUploadUrl({
-          prefix,
-          contentType,
-          name: filename,
-        })
-      }));
+      const data = await Promise.all(
+        filenames.map((filename) => {
+          const prefix = `${jwtPayload.sub as string}/${packet_id}`;
+          return generateUploadUrl({
+            prefix,
+            contentType,
+            name: filename,
+          });
+        }),
+      );
 
       this.createDocumentRecords(packet_id, data);
-    
+
       return c.json({ data, id: packet_id }, 200);
     });
 
@@ -75,8 +76,7 @@ export class Document extends DurableObject<Env> {
 
     // get all the users documents
     this.app.get('/docs', (c) => {
-    
-      const { limit: _l = 10, page: _p = 1 } = c.req.query() as unknown as { limit: number, page: number };
+      const { limit: _l = 10, page: _p = 1 } = c.req.query() as unknown as { limit: number; page: number };
       const limit = parseInt(_l as unknown as string, 10);
       const page = parseInt(_p as unknown as string, 10);
 
@@ -87,14 +87,16 @@ export class Document extends DurableObject<Env> {
       const totalPages = Math.ceil(parseInt(totalCount as any, 10) / limit);
 
       const data = this.doSql.exec('SELECT * FROM documents ORDER BY created_at DESC LIMIT ? OFFSET ?', limit, offset);
-      const docs = data.toArray().map((d) => this.toDocumentRecord(d as any))
+      const docs = data.toArray().map((d) => this.toDocumentRecord(d as any));
 
-    
       return c.json({ data: docs, total: totalCount, totalPages, page, limit }, 200);
     });
   }
 
-  private createDocumentRecords(packet_id: string, data: { id: string, filename: string, url: string, downloadUrl: string, bucketPath: string }[] ) {
+  private createDocumentRecords(
+    packet_id: string,
+    data: { id: string; filename: string; url: string; downloadUrl: string; bucketPath: string }[],
+  ) {
     const docs = data.map((doc) => {
       return {
         id: doc.id,
@@ -105,16 +107,23 @@ export class Document extends DurableObject<Env> {
         created_at: Date.now().toString(),
         status: 'pending',
         bucket_path: doc.bucketPath,
-      }
+      };
     });
 
     docs.forEach((doc) => {
-      this.doSql.exec('INSERT INTO documents (id, packet_id, filename, url, download_url, created_at, status, bucket_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-        doc.id, doc.packet_id, doc.filename, doc.url, doc.download_url, doc.created_at, doc.status, doc.bucket_path 
+      this.doSql.exec(
+        'INSERT INTO documents (id, packet_id, filename, url, download_url, created_at, status, bucket_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        doc.id,
+        doc.packet_id,
+        doc.filename,
+        doc.url,
+        doc.download_url,
+        doc.created_at,
+        doc.status,
+        doc.bucket_path,
       );
     });
   }
-
 
   private async getDocumentsByPacketId(packet_id: string) {
     const documents = await this.doSql.exec('SELECT * FROM documents WHERE packet_id = ?', packet_id);
