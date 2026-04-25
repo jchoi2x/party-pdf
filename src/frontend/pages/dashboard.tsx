@@ -69,7 +69,7 @@ export default function DashboardPage() {
         sortable: false,
         filter: false,
         width: 100,
-        cellRenderer: ({ data }) => {
+        cellRenderer: ({ data }: { data: DocumentRow }) => {
           if (!data) return '';
           return `<a href="/document/${data.packet_id}" style="text-decoration:underline;">Open</a>`;
         },
@@ -82,9 +82,9 @@ export default function DashboardPage() {
     () => ({
       getRows: async (params: IServerSideGetRowsParams<DocumentRow>) => {
         try {
-          const requestedSize = params.request.endRow - params.request.startRow;
+          const requestedSize = (params.request.endRow ?? 0) - (params.request.startRow ?? 0);
           const limit = Math.max(1, Number.isFinite(requestedSize) ? requestedSize : pageSize);
-          const page = Math.floor(params.request.startRow / limit) + 1;
+          const page = Math.floor((params.request.startRow ?? 0) / limit) + 1;
           const response = await httpClient.get<DocumentsResponse>(`/api/docs`, {
             params: { page, limit },
           });
@@ -141,6 +141,7 @@ export default function DashboardPage() {
           ref={gridRef}
           columnDefs={columnDefs}
           rowModelType='serverSide'
+          // @ts-expect-error
           serverSideStoreType='partial'
           cacheBlockSize={pageSize}
           paginationPageSize={pageSize}
