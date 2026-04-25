@@ -95,6 +95,8 @@ export function useWebViewer({
         viewerInstanceRef.current = instance;
         // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
         (window as any).instance = instance;
+        (window as any).dv = instance.Core.documentViewer;
+        (window as any).am = instance.Core.annotationManager;
 
         try {
           const english = translateEn;
@@ -124,6 +126,7 @@ export function useWebViewer({
 
         const { onDocumentLoaded } = setupYjsCollaboration({
           annotationManager,
+          documentViewer,
           roomId: id,
           providerRef,
           setCollaborators,
