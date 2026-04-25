@@ -111,21 +111,37 @@ export function useWebViewer({
         annotationManager.setCurrentUser(getStoredUserName() || 'Guest');
 
 
-      
-        
-        documentViewer.addEventListener('documentLoaded', () => {
-          console.debug('Document Loaded [once]');
-          setIsLoading(false);
-          setupYjsCollaboration(
-            annotationManager,
-            id,
-            providerRef,
-            setCollaborators,
-            setConnectionStatus,
-            getPartyParams,
-          );
-          setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
-        }, { once: true });
+        const getDocumentId = () => {
+          const doc = documentViewer.getDocument();
+          const documentId = doc ? doc.getDocumentId() : undefined;
+          if (documentId && !Number.isNaN(parseInt(documentId, 10))) {
+            const filename = doc.getFilename();
+            const docId = packetDocs.find((doc) => doc.filename === filename)?.id;
+            return docId!;
+          }
+          return documentId;
+        };
+
+        const { onDocumentLoaded } = setupYjsCollaboration({
+          annotationManager,
+          roomId: id,
+          providerRef,
+          setCollaborators,
+          setConnectionStatus,
+          getPartyParams,
+          getDocumentId,
+        });
+
+        documentViewer.addEventListener(
+          'documentLoaded',
+          () => {
+            console.debug('Document Loaded [once]');
+            setIsLoading(false);
+            onDocumentLoaded();
+            setupCursorTracking(instance, providerRef, cursorCleanupRef, doUpdateCursorOverlay);
+          },
+          { once: false },
+        );
 
         documentViewer.addEventListener(instance.Core.DocumentViewer.Events.DOCUMENT_UNLOADED, () => {
           console.debug('Document Unloaded');
@@ -135,13 +151,16 @@ export function useWebViewer({
 
 
 
-        Array.from(packetDocs).forEach(({ download_url, filename, id }, index) => {
-          instance.UI.TabManager.addTab(download_url, { 
-            filename,
-            cacheKey: id,
-            setActive: index === 0,
+        Array.from(packetDocs)
+          .reverse()
+          .forEach(({ download_url, filename, id }, index) => {
+            console.log('adding tab', { download_url, filename, documentId: id, index });
+            instance.UI.TabManager.addTab(download_url, {
+              filename,
+              documentId: id,
+              setActive: index === packetDocs.length - 1,
+            });
           });
-        })
       } catch (err) {
         console.error('WebViewer initialization failed:', err);
         toast.error('Failed to load document. Please try again.');
