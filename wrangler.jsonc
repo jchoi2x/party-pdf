@@ -50,11 +50,5 @@
   "upload_source_maps": true,
   "compatibility_flags": ["nodejs_compat"],
   // Bearer access tokens are verified with JWKS (see require-auth0-jwt). No AUTH0_CLIENT_SECRET on the Worker for that flow.
-  // Profile PATCH uses Auth0 Management API — set AUTH0_MANAGEMENT_CLIENT_ID / AUTH0_MANAGEMENT_CLIENT_SECRET in secrets or .dev.vars (M2M app with update:users).
-  "vars": {
-    "AUTH0_DOMAIN": "",
-    "AUTH0_AUDIENCE": "",
-    "AUTH0_MANAGEMENT_CLIENT_ID": "",
-    "AUTH0_MANAGEMENT_CLIENT_SECRET": ""
-  }
+  // Profile PATCH uses Auth0 Management API — set AUTH0_MANAGEMENT_CLIENT_ID / AUTH0_MANAGEMENT_CLIENT_SECRET in secrets or .dev.vars (M2M app with update:users)
 }
