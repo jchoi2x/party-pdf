@@ -20,11 +20,11 @@ export default function DocumentPanel({
   overlayRef,
 }: DocumentPanelProps) {
   return (
-    <div className='flex-1 relative overflow-hidden'>
+    <div className='relative flex min-h-0 flex-1 overflow-hidden'>
       {isLoading && <LoadingSpinner message='Loading document...' />}
       {showConnectingModal && <ConnectionModal type='connecting' />}
       {!isLoading && connectionStatus === 'disconnected' && <ConnectionModal type='disconnected' />}
-      <div ref={viewerRef} className='w-full h-full' />
+      <div ref={viewerRef} className='absolute inset-0 z-0 overflow-hidden' />
       <CursorOverlay overlayRef={overlayRef} />
     </div>
   );

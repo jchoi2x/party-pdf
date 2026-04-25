@@ -111,7 +111,7 @@ export default function DocumentPage() {
         />
       )}
 
-      <div className='flex-1 flex overflow-hidden'>
+      <div className='flex min-h-0 flex-1 overflow-hidden'>
         {!isMobile && (
           <VideoPanel
             {...videoPanelSharedProps}
