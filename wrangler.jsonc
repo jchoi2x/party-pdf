@@ -18,7 +18,7 @@
       "new_sqlite_classes": [
         "Document"
       ],
-      "tag": "v1"
+      "tag": "v2"
     },
   ],
   "durable_objects": {
