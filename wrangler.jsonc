@@ -15,10 +15,16 @@
       "tag": "v1"
     },
     {
-      "new_sqlite_classes": [
+      "deleted_classes": [
         "Document"
       ],
       "tag": "v2"
+    },
+    {
+      "new_sqlite_classes": [
+        "Document"
+      ],
+      "tag": "v3"
     },
   ],
   "durable_objects": {
