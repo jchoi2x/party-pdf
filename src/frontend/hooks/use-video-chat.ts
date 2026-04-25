@@ -78,6 +78,7 @@ export function useVideoChat({ id, providerRef, collaborators, userName }: UseVi
     localUser: { name: userName || 'You', color: getUserColor() },
     onReplaceStream: handleReplaceStream,
     audioOutputId,
+    providerRef,
   };
 
   return {

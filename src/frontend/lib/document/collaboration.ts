@@ -46,6 +46,14 @@ type TSetupYjsCollaborationParams = {
 };
 const validStatuses = new Set<ConnectionStatus>(['connecting', 'connected', 'disconnected']);
 
+function cloneAwarenessForUi(state: Record<string, unknown>): Record<string, unknown> {
+  try {
+    return JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
+  } catch {
+    return { error: 'Awareness state is not JSON-serializable' };
+  }
+}
+
 export function setupYjsCollaboration({
   annotationManager,
   roomId,
@@ -98,7 +106,14 @@ export function setupYjsCollaboration({
             ? rawCursor
             : null;
         if (name) {
-          others.push({ name, color, peerId, cursor });
+          others.push({
+            name,
+            color,
+            peerId,
+            cursor,
+            clientId,
+            awarenessState: cloneAwarenessForUi(state as Record<string, unknown>),
+          });
         }
       });
       setCollaborators(others);
@@ -114,6 +129,17 @@ export function setupYjsCollaboration({
         setConnectionStatus('disconnected');
       }
     });
+  };
+ 
+  const loadInitialAnnotations = (annotationsMap: Y.Map<string>) => {
+    try {
+      const annotXfdfs = Object.values(annotationsMap.toJSON());
+      if (annotXfdfs.length > 0) {
+        annotationManager.importAnnotations(wrapAnnotationNodeAsXfdf(annotXfdfs.join('')));
+      }
+    } catch (e) {
+      console.error('Failed to load initial annotations:', e);
+    }
   };
 
   const setupSynced = () => {
@@ -203,16 +229,6 @@ export function setupYjsCollaboration({
 
   const setupStatusMap = new Map<string, boolean>();
 
-  const loadInitialAnnotations = (annotationsMap: Y.Map<string>) => {
-    try {
-      const annotXfdfs = Object.values(annotationsMap.toJSON());
-      if (annotXfdfs.length > 0) {
-        annotationManager.importAnnotations(wrapAnnotationNodeAsXfdf(annotXfdfs.join('')));
-      }
-    } catch (e) {
-      console.error('Failed to load initial annotations:', e);
-    }
-  };
 
   const setupYjsCollab = () => {
     // const annotationsMap = ydoc.getMap<string>('annotations');

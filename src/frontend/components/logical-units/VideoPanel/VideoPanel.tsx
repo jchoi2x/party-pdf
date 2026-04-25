@@ -1,5 +1,7 @@
 import { CaretLeft, CaretRight, GearSix, VideoCamera, VideoCameraSlash, X } from '@phosphor-icons/react';
+import type { MutableRefObject } from 'react';
 import { useState } from 'react';
+import type YProvider from 'y-partyserver/provider';
 import { Button } from '@/components/ui/button';
 import type { Collaborator, ConnectionStatus } from '@/pages/document';
 import DeviceSettingsDialog from '../DeviceSettingsDialog';
@@ -20,6 +22,7 @@ interface VideoPanelProps {
   onReplaceStream: (stream: MediaStream, audioOutputId: string) => void;
   audioOutputId?: string;
   connectionStatus: ConnectionStatus;
+  providerRef: MutableRefObject<InstanceType<typeof YProvider> | null>;
 }
 
 export default function VideoPanel({
@@ -37,6 +40,7 @@ export default function VideoPanel({
   onReplaceStream,
   audioOutputId,
   connectionStatus,
+  providerRef,
 }: VideoPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   // const hasStreams = localStream || remoteStreams.size > 0;
@@ -97,6 +101,7 @@ export default function VideoPanel({
               localUser={localUser}
               audioOutputId={audioOutputId}
               connectionStatus={connectionStatus}
+              providerRef={providerRef}
             />
           </div>
         </div>
@@ -152,6 +157,7 @@ export default function VideoPanel({
             localUser={localUser}
             audioOutputId={audioOutputId}
             connectionStatus={connectionStatus}
+            providerRef={providerRef}
           />
         </div>
       </div>

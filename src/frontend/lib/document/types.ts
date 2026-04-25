@@ -11,4 +11,8 @@ export interface Collaborator {
   color: string;
   peerId?: string;
   cursor?: CursorPosition | null;
+  /** Yjs / y-protocols awareness client id for this remote peer. */
+  clientId: number;
+  /** Full awareness state for this client (JSON-serializable snapshot). */
+  awarenessState: Record<string, unknown>;
 }
