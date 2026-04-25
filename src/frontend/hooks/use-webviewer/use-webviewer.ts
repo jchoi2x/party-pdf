@@ -133,6 +133,7 @@ export function useWebViewer({
           setConnectionStatus,
           getPartyParams,
           getDocumentId,
+          Core: instance.Core
         });
 
         documentViewer.addEventListener(

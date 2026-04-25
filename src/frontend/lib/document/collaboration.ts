@@ -37,6 +37,12 @@ function splitXfdfIntoAnnotationEntries(xfdf: string): Array<{ id: string; xfdfN
     .filter((entry): entry is { id: string; xfdfNode: string; } => Boolean(entry));
 }
 
+function getWidgetIdFromXfdf(xfdf: string): string | null {
+  const parsed = new DOMParser().parseFromString(xfdf, 'text/xml');
+  const widgetNode = parsed.getElementsByTagNameNS('*', 'widget').item(0);
+  return widgetNode?.getAttribute('name') ?? null;
+}
+
 type TSetupYjsCollaborationParams = {
   annotationManager: Core.AnnotationManager;
   documentViewer: Core.DocumentViewer;
@@ -46,6 +52,7 @@ type TSetupYjsCollaborationParams = {
   setConnectionStatus: Dispatch<SetStateAction<ConnectionStatus>>;
   getPartyParams?: () => Promise<PartyConnectionParams>;
   getDocumentId: () => string | undefined;
+  Core: typeof Core;
 };
 const validStatuses = new Set<ConnectionStatus>(['connecting', 'connected', 'disconnected']);
 
@@ -65,6 +72,7 @@ export function setupYjsCollaboration({
   setConnectionStatus,
   getPartyParams,
   getDocumentId, documentViewer,
+  Core,
 }: TSetupYjsCollaborationParams) {
   const ydoc = new Y.Doc();
   (window as any).ydoc = ydoc;
@@ -79,6 +87,7 @@ export function setupYjsCollaboration({
 
   providerRef.current = (window as any).provider = provider;
   const documentsMap = ydoc.getMap<Y.Map<string>>('documents');
+  const widgetDocumentsMap = ydoc.getMap<Y.Map<string>>('widget-documents');
 
   const setupCollaborators = () => {
     const currentUser = getStoredUserName() || 'Guest';
@@ -133,7 +142,7 @@ export function setupYjsCollaboration({
     });
   };
 
-  const loadInitialAnnotations = async (annotationsMap: Y.Map<string>) => {
+  const loadInitialAnnotations = async (annotationsMap: Y.Map<string>, widgetsMap: Y.Map<string>) => {
     try {
       const annotIds = Object.keys(annotationsMap.toJSON());
       const existingAnnotIds = annotationManager
@@ -189,11 +198,62 @@ export function setupYjsCollaboration({
           await annotationManager.importAnnotationCommand(annotationCommand);
         }
       }
+
+      const widgetIds = Object.keys(widgetsMap.toJSON());
+      const existingWidgetIds = annotationManager
+        .getAnnotationsList()
+        .filter((annot) => annot instanceof Core.Annotations.WidgetAnnotation)
+        .map((annot) => annot.Id)
+        .filter((id): id is string => Boolean(id));
+      const missingWidgetIds = _.difference(widgetIds, existingWidgetIds);
+      const commonWidgetIds = _.intersection(widgetIds, existingWidgetIds);
+      const deleteWidgetIds = _.difference(existingWidgetIds, widgetIds);
+
+      const widgetImports = [...missingWidgetIds, ...commonWidgetIds]
+        .map((id) => widgetsMap.get(id))
+        .filter((xfdf): xfdf is string => Boolean(xfdf));
+
+      const hasWorkToImport =
+        annotationOperations.length > 0 ||
+        widgetImports.length > 0 ||
+        deleteWidgetIds.length > 0;
+
+      if (hasWorkToImport) {
+        await documentViewer.getAnnotationsLoadedPromise();
+      }
+
+      if (widgetImports.length > 0) {
+        for (const widgetXfdf of widgetImports) {
+          await annotationManager.importAnnotations(widgetXfdf);
+        }
+      }
+
+      if (deleteWidgetIds.length > 0) {
+        const widgetDeleteCommand = `${XFDF_ANNOT_CMD_HEADER}<add></add><modify></modify><delete>${deleteWidgetIds.map((id) => `<id>${id}</id>`).join('')}</delete>${XFDF_CLOSE}`;
+        await annotationManager.importAnnotationCommand(widgetDeleteCommand);
+      }
     } catch (e) {
       console.error('Failed to load initial annotations:', e);
     }
   };
 
+  function getAnnotationsMap(docId: string) {
+    if (!documentsMap.has(docId)) {
+      const docMap = new Y.Map<string>();
+      documentsMap.set(docId, docMap);
+    }
+
+    return documentsMap.get(docId)!;
+  }
+
+  function getWidgetAnnotationsMap(docId: string) {
+    if (!widgetDocumentsMap.has(docId)) {
+      const docMap = new Y.Map<string>();
+      widgetDocumentsMap.set(docId, docMap);
+    }
+
+    return widgetDocumentsMap.get(docId)!;
+  }
   const setupSynced = () => {
     provider.on('synced', async function handleSynced(synced: boolean) {
       if (!synced) {
@@ -204,16 +264,26 @@ export function setupYjsCollaboration({
       if (!docId) {
         return;
       }
-      if (!documentsMap.has(docId)) {
-        documentsMap.set(docId, new Y.Map<string>());
-      }
 
-      const annotationsMap = documentsMap.get(docId)!;
+      const annotationsMap = getAnnotationsMap(docId);
+      const widgetAnnotationsMap = getWidgetAnnotationsMap(docId);
 
       try {
         const annotXfdfs = Object.values(annotationsMap.toJSON());
+        const widgetXfdfs = Object.values(widgetAnnotationsMap.toJSON());
+
+        if (annotXfdfs.length > 0 || widgetXfdfs.length > 0) {
+          await documentViewer.getAnnotationsLoadedPromise();
+        }
+
         if (annotXfdfs.length > 0) {
-          annotationManager.importAnnotations(wrapAnnotationNodeAsXfdf(annotXfdfs.join('')));
+          await annotationManager.importAnnotations(wrapAnnotationNodeAsXfdf(annotXfdfs.join('')));
+        }
+
+        if (widgetXfdfs.length > 0) {
+          for (const widgetXfdf of widgetXfdfs) {
+            await annotationManager.importAnnotations(widgetXfdf);
+          }
         }
       } catch (e) {
         console.error('Failed to load initial annotations:', e);
@@ -236,29 +306,31 @@ export function setupYjsCollaboration({
       action: string,
       { imported }: { imported: boolean; },
     ) {
-      // const annotationsMap = ydoc.getMap<string>('annotations');
       const docId = getDocumentId();
       if (!docId) {
         return;
       }
+      const annotationsMap = getAnnotationsMap(docId);
+      const widgetAnnotationsMap = getWidgetAnnotationsMap(docId);
 
-      if (!documentsMap.has(docId)) {
-        documentsMap.set(docId, new Y.Map<string>());
-      }
-      const annotationsMap = documentsMap.get(docId)!;
       if (imported || isSyncing) return;
+
       try {
         if (action === 'delete') {
           ydoc.transact(() => {
             annotations.forEach((annot) => {
-              if (annot.Id) annotationsMap.delete(annot.Id);
+              if (!annot.Id) {
+                return;
+              }
+              annotationsMap.delete(annot.Id);
+              widgetAnnotationsMap.delete(annot.Id);
             });
           }, 'local');
         } else {
           const annots = annotations.filter((annot) => annot && !!annot.Id);
           if (annots.length === 0) return;
           const xfdf = await annotationManager.exportAnnotations({
-            annotationList: annots,
+            annotationList: annots.filter((annot) => !(annot instanceof Core.Annotations.WidgetAnnotation)),
             widgets: true,
             links: false,
             fields: true,
@@ -268,6 +340,28 @@ export function setupYjsCollaboration({
 
           ydoc.transact(() => {
             xfdfs.forEach(({ id, xfdfNode }) => annotationsMap.set(id, xfdfNode));
+          }, 'local');
+
+          // widgets need to be exported separately because they have a <ffield /> element along with it
+          const widgets = annots.filter((annot) => (annot instanceof Core.Annotations.WidgetAnnotation));
+
+          const widgetXfdfs = await Promise.all(widgets.map(async (widget) => {
+            return annotationManager.exportAnnotations({
+              annotationList: [widget],
+              widgets: true,
+              links: false,
+              fields: true,
+              useDisplayAuthor: true,
+            });
+          }));
+          ydoc.transact(() => {
+            widgetXfdfs.forEach((widgetXfdf) => {
+              const widgetId = getWidgetIdFromXfdf(widgetXfdf);
+              if (!widgetId) {
+                return;
+              }
+              widgetAnnotationsMap.set(widgetId, widgetXfdf);
+            });
           }, 'local');
         }
       } catch (e) {
@@ -281,20 +375,18 @@ export function setupYjsCollaboration({
   const setupStatusMap = new Map<string, boolean>();
 
   const setupYjsCollab = () => {
-    // const annotationsMap = ydoc.getMap<string>('annotations');
     const docId = getDocumentId();
     if (!docId) {
       return;
     }
-    if (!documentsMap.has(docId)) {
-      documentsMap.set(docId, new Y.Map<string>());
-    }
-    const annotationsMap = documentsMap.get(docId)!;
+
+    const annotationsMap = getAnnotationsMap(docId);
+    const widgetAnnotationsMap = getWidgetAnnotationsMap(docId);
 
     // if already setup for this docmentId then just load the initial annotations
     if (setupStatusMap.get(docId)) {
       console.log('setupYjsCollab already setup for docId', docId);
-      return loadInitialAnnotations(annotationsMap);
+      return loadInitialAnnotations(annotationsMap, widgetAnnotationsMap);
     }
 
     // isSyncing prevents the annotationChanged listener from re-broadcasting
@@ -343,10 +435,48 @@ export function setupYjsCollaboration({
         isSyncing = false;
       }
     }
+
+    async function handleYjsWidgetAnnotationsChange(event: Y.YMapEvent<string>) {
+      if (isSyncing || event.transaction.origin === 'local') {
+        return;
+      }
+
+      isSyncing = true;
+      try {
+        const imports: string[] = [];
+        const deletes: string[] = [];
+        for (const [key, change] of event.changes.keys) {
+          if (change.action === 'delete') {
+            deletes.push(`<id>${key}</id>`);
+            continue;
+          }
+
+          const xfdf = widgetAnnotationsMap.get(key);
+          if (!xfdf) {
+            continue;
+          }
+          imports.push(xfdf);
+        }
+
+        for (const widgetXfdf of imports) {
+          await annotationManager.importAnnotations(widgetXfdf);
+        }
+
+        if (deletes.length > 0) {
+          const deleteCommand = `${XFDF_ANNOT_CMD_HEADER}<add></add><modify></modify><delete>${deletes.join('')}</delete>${XFDF_CLOSE}`;
+          await annotationManager.importAnnotationCommand(deleteCommand);
+        }
+      } catch (e) {
+        console.error('Failed to apply remote widget annotation:', e);
+      } finally {
+        isSyncing = false;
+      }
+    }
     annotationsMap.observe(handleYjsAnnotationsChange);
+    widgetAnnotationsMap.observe(handleYjsWidgetAnnotationsChange);
     setupStatusMap.set(docId, true);
     console.log('setupYjsCollab setup complete for docId', docId);
-    return loadInitialAnnotations(annotationsMap);
+    return loadInitialAnnotations(annotationsMap, widgetAnnotationsMap);
   };
 
   const initialize = () => {
