@@ -225,7 +225,16 @@ export function useWebViewer({
         providerRef.current = null;
       }
     };
-  }, [apiFetch, collabSessionId, currentUserEmail, currentUserSub, getPartyParams, navigate, setCollaborators, setConnectionStatus]);
+  }, [
+    apiFetch,
+    collabSessionId,
+    currentUserEmail,
+    currentUserSub,
+    getPartyParams,
+    navigate,
+    setCollaborators,
+    setConnectionStatus,
+  ]);
 
   useEffect(() => {
     const instance = viewerInstanceRef.current;

@@ -33,3 +33,8 @@ dist-ssr
 
 *storybook.log
 storybook-static
+
+# Playwright E2E
+playwright-report/
+playwright-results/
+e2e/.auth/

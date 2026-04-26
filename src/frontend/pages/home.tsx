@@ -90,7 +90,14 @@ export default function Home() {
   }
 
   function parseInviteEmails(raw: string): string[] {
-    return [...new Set(raw.split(/[,\n;]+/).map((email) => email.trim().toLowerCase()).filter((email) => email.length > 0))];
+    return [
+      ...new Set(
+        raw
+          .split(/[,\n;]+/)
+          .map((email) => email.trim().toLowerCase())
+          .filter((email) => email.length > 0),
+      ),
+    ];
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -408,7 +415,9 @@ export default function Home() {
                     rows={6}
                     disabled={isSubmittingInvites}
                   />
-                  <p className='text-xs text-muted-foreground'>Separate emails with commas, semicolons, or new lines.</p>
+                  <p className='text-xs text-muted-foreground'>
+                    Separate emails with commas, semicolons, or new lines.
+                  </p>
                 </div>
                 <div className='flex gap-2'>
                   <Button type='button' variant='outline' className='flex-1' onClick={handleSkipInvites}>
@@ -453,7 +462,12 @@ export default function Home() {
             )}
           </div>
           <DialogFooter>
-            <Button type='button' variant='outline' onClick={() => setConfirmInvitesOpen(false)} disabled={isSubmittingInvites}>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setConfirmInvitesOpen(false)}
+              disabled={isSubmittingInvites}
+            >
               Cancel
             </Button>
             <Button type='button' onClick={handleConfirmInvites} disabled={isSubmittingInvites}>

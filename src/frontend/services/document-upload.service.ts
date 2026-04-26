@@ -112,7 +112,10 @@ export class DocumentUploadService {
 
   async executeUploadFlow(args: TExecuteUploadFlowArgs): Promise<UploadFlowResult> {
     const { filename, contentType, file, onProgress } = args;
-    const { data, collab_session_id: collabSessionId } = await this.getUploadUrl({ filenames: [filename], contentType });
+    const { data, collab_session_id: collabSessionId } = await this.getUploadUrl({
+      filenames: [filename],
+      contentType,
+    });
     const fileUpload = data.find((item) => item.filename === filename) ?? data[0];
 
     if (!fileUpload) {

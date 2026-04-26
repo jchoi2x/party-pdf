@@ -1,5 +1,11 @@
 import type { Context } from 'hono';
-import { actorFromJwt, collabSessionDocumentsTable, collabSessionParticipantsTable, collabSessionsTable, getDb } from '../../../db';
+import {
+  actorFromJwt,
+  collabSessionDocumentsTable,
+  collabSessionParticipantsTable,
+  collabSessionsTable,
+  getDb,
+} from '../../../db';
 import { initS3Client } from '../../../utils/s3';
 
 type Ctx = Context<

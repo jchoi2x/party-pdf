@@ -219,7 +219,9 @@ collabSessionsRouter.post('/collab-sessions/:sessionId/invites', async (c) => {
       inArray(collabSessionParticipantsTable.email, normalizedEmails),
     ),
   });
-  const participantByEmail = new Map(existingParticipants.map((participant) => [normalizeEmail(participant.email), participant]));
+  const participantByEmail = new Map(
+    existingParticipants.map((participant) => [normalizeEmail(participant.email), participant]),
+  );
   const auth0Configured = isAuth0ManagementConfigured(c.env);
 
   const results: Array<{
