@@ -175,10 +175,16 @@ collabSessionsRouter.post('/collab-sessions/:sessionId/invites', async (c) => {
     return c.json({ error: 'unauthorized', message: 'Invalid JWT subject.' }, 401);
   }
 
-  const payload = await c.req.json().catch(() => null);
-  const rawEmails = Array.isArray(payload?.emails) ? payload.emails : [];
-  const normalizedEmails = [...new Set(rawEmails.filter((email): email is string => typeof email === 'string').map(normalizeEmail))]
-    .filter((email) => email.length > 0);
+  const payload = (await c.req.json().catch(() => null)) as { emails?: unknown } | null;
+  const rawEmails: unknown[] = Array.isArray(payload?.emails) ? payload.emails : [];
+  const normalizedEmails: string[] = [
+    ...new Set(
+      rawEmails
+        .filter((e): e is string => typeof e === 'string')
+        .map(normalizeEmail)
+        .filter((e) => e.length > 0),
+    ),
+  ];
 
   if (normalizedEmails.length === 0) {
     return c.json({ error: 'bad_request', message: 'At least one invite email is required.' }, 400);
