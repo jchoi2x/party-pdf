@@ -4,13 +4,24 @@ import { toast } from 'sonner';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useApiAuth } from '@/contexts/api-auth';
 import { formatFileSize } from '@/lib/utils';
 import { DocumentUploadService } from '@/services/document-upload.service';
 
 export default function Home() {
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [, navigate] = useLocation();
+  const [step, setStep] = useState<'upload' | 'invite'>('upload');
   const [selectedFiles, setSelectedFiles] = useState<
     Array<{
       id: string;
@@ -21,6 +32,10 @@ export default function Home() {
     }>
   >([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [collabSessionId, setCollabSessionId] = useState<string | null>(null);
+  const [inviteInput, setInviteInput] = useState('');
+  const [confirmInvitesOpen, setConfirmInvitesOpen] = useState(false);
+  const [isSubmittingInvites, setIsSubmittingInvites] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { httpClient } = useApiAuth();
@@ -74,6 +89,10 @@ export default function Home() {
     setSelectedFiles((prev) => prev.filter((item) => item.id !== id));
   }
 
+  function parseInviteEmails(raw: string): string[] {
+    return [...new Set(raw.split(/[,\n;]+/).map((email) => email.trim().toLowerCase()).filter((email) => email.length > 0))];
+  }
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (isUploading) return;
@@ -93,7 +112,7 @@ export default function Home() {
     addFiles(Array.from(e.dataTransfer.files ?? []));
   };
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmitUpload(e: React.FormEvent) {
     e.preventDefault();
     void startUpload();
   }
@@ -113,7 +132,7 @@ export default function Home() {
 
     try {
       const fileIdByIndex = selectedFiles.map((item) => item.id);
-      const { packetId } = await uploadService.executeBatchUploadFlow({
+      const { collabSessionId: createdSessionId } = await uploadService.executeBatchUploadFlow({
         files: selectedFiles.map((item) => ({
           file: item.file,
           filename: item.file.name,
@@ -143,12 +162,69 @@ export default function Home() {
         },
       });
 
+      setCollabSessionId(createdSessionId);
+      setStep('invite');
       setIsUploading(false);
-      navigate(`/document/${packetId}`);
     } catch (err) {
       console.error('Cloud upload failed:', err);
       toast.error('One or more uploads failed. Please try again.');
       setIsUploading(false);
+    }
+  }
+
+  function openInviteConfirmation() {
+    const parsedEmails = parseInviteEmails(inviteInput);
+    const invalidEmails = parsedEmails.filter((email) => !EMAIL_REGEX.test(email));
+    if (invalidEmails.length > 0) {
+      toast.error(`Invalid email(s): ${invalidEmails.join(', ')}`);
+      return;
+    }
+    setConfirmInvitesOpen(true);
+  }
+
+  function handleSkipInvites() {
+    if (!collabSessionId) return;
+    navigate(`/document/${collabSessionId}`);
+  }
+
+  function handleConfirmInvites() {
+    void submitInvitesAndNavigate();
+  }
+
+  async function submitInvitesAndNavigate() {
+    if (!collabSessionId || isSubmittingInvites) return;
+    const emails = parseInviteEmails(inviteInput);
+    const invalidEmails = emails.filter((email) => !EMAIL_REGEX.test(email));
+    if (invalidEmails.length > 0) {
+      toast.error(`Invalid email(s): ${invalidEmails.join(', ')}`);
+      return;
+    }
+
+    if (emails.length === 0) {
+      setConfirmInvitesOpen(false);
+      navigate(`/document/${collabSessionId}`);
+      return;
+    }
+
+    setIsSubmittingInvites(true);
+    try {
+      const response = await uploadService.inviteParticipants(collabSessionId, emails);
+      const failedCount = response.results.filter((result) => result.status === 'failure').length;
+      const existingCount = response.results.filter((result) => result.status === 'existing_user').length;
+      const registrationCount = response.results.filter((result) => result.status === 'needs_registration').length;
+
+      if (failedCount > 0) {
+        toast.warning(`Invites processed with ${failedCount} failure(s). Opening session now.`);
+      } else {
+        toast.success(`Invites sent: ${existingCount} existing user(s), ${registrationCount} registration invite(s).`);
+      }
+      setConfirmInvitesOpen(false);
+      navigate(`/document/${collabSessionId}`);
+    } catch (error) {
+      console.error('Invite submission failed:', error);
+      toast.error('Failed to submit invites. Please retry or continue without invites.');
+    } finally {
+      setIsSubmittingInvites(false);
     }
   }
 
@@ -171,24 +247,29 @@ export default function Home() {
         <Card className='shadow-lg border-2'>
           <CardHeader className='pb-4'>
             <CardTitle className='text-lg' style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Upload Document
+              {step === 'upload' ? 'Upload Documents' : 'Invite Participants'}
             </CardTitle>
-            <CardDescription>Select a PDF file to generate a shareable collaboration link</CardDescription>
+            <CardDescription>
+              {step === 'upload'
+                ? 'Select one or more PDFs to create your collaboration session.'
+                : 'Add participant emails before opening your session.'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className='space-y-6'>
-              <div className='space-y-2'>
-                <Label htmlFor='pdf-upload'>PDF File</Label>
-                <div
-                  role='button'
-                  onClick={() => {
-                    if (isUploading) return;
-                    fileInputRef.current?.click();
-                  }}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  className={`
+            {step === 'upload' && (
+              <form onSubmit={handleSubmitUpload} className='space-y-6'>
+                <div className='space-y-2'>
+                  <Label htmlFor='pdf-upload'>PDF File</Label>
+                  <div
+                    role='button'
+                    onClick={() => {
+                      if (isUploading) return;
+                      fileInputRef.current?.click();
+                    }}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`
                     relative cursor-pointer rounded-lg border-2 border-dashed transition-colors
                     ${
                       isDragActive
@@ -199,116 +280,151 @@ export default function Home() {
                     }
                     p-6 text-center
                   `}
-                >
-                  <input
-                    ref={fileInputRef}
-                    id='pdf-upload'
-                    type='file'
-                    accept='application/pdf'
-                    multiple
-                    onChange={handleFileChange}
-                    disabled={isUploading}
-                    className='sr-only'
-                  />
-                  {selectedFiles.length > 0 ? (
-                    <div className='flex flex-col items-center gap-2'>
-                      <FilePdf size={24} className='text-primary' />
-                      <div>
-                        <p className='text-sm font-medium text-foreground'>
-                          {selectedFiles.length} PDF file{selectedFiles.length > 1 ? 's' : ''} selected
-                        </p>
-                        <p className='text-xs text-muted-foreground mt-1'>Click or drop more files to add them</p>
+                  >
+                    <input
+                      ref={fileInputRef}
+                      id='pdf-upload'
+                      type='file'
+                      accept='application/pdf'
+                      multiple
+                      onChange={handleFileChange}
+                      disabled={isUploading}
+                      className='sr-only'
+                    />
+                    {selectedFiles.length > 0 ? (
+                      <div className='flex flex-col items-center gap-2'>
+                        <FilePdf size={24} className='text-primary' />
+                        <div>
+                          <p className='text-sm font-medium text-foreground'>
+                            {selectedFiles.length} PDF file{selectedFiles.length > 1 ? 's' : ''} selected
+                          </p>
+                          <p className='text-xs text-muted-foreground mt-1'>Click or drop more files to add them</p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className='flex flex-col items-center gap-2'>
-                      <Upload size={24} className='text-muted-foreground' />
-                      <div>
-                        <p className='text-sm font-medium text-foreground'>Click or drop PDFs to add files</p>
-                        <p className='text-xs text-muted-foreground mt-1'>PDF files only, multiple supported</p>
+                    ) : (
+                      <div className='flex flex-col items-center gap-2'>
+                        <Upload size={24} className='text-muted-foreground' />
+                        <div>
+                          <p className='text-sm font-medium text-foreground'>Click or drop PDFs to add files</p>
+                          <p className='text-xs text-muted-foreground mt-1'>PDF files only, multiple supported</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedFiles.length > 0 && (
-                <div className='rounded-md border overflow-hidden'>
-                  <table className='w-full text-sm'>
-                    <thead className='bg-muted/50'>
-                      <tr className='text-left'>
-                        <th className='px-3 py-2 font-medium text-muted-foreground'>File</th>
-                        <th className='px-3 py-2 font-medium text-muted-foreground'>Size</th>
-                        <th className='px-3 py-2 font-medium text-muted-foreground'>Status</th>
-                        {!isUploading && <th className='px-3 py-2 w-10' />}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedFiles.map((item) => (
-                        <tr key={item.id} className='border-t'>
-                          <td className='px-3 py-2 max-w-40 truncate' title={item.file.name}>
-                            {item.file.name}
-                          </td>
-                          <td className='px-3 py-2 text-muted-foreground'>{formatFileSize(item.file.size)}</td>
-                          <td className='px-3 py-2'>
-                            <div className='space-y-1'>
-                              <div className='text-xs text-muted-foreground'>
-                                {item.status === 'queued' && 'Queued'}
-                                {item.status === 'uploading' && `Uploading ${item.progress}%`}
-                                {item.status === 'uploaded' && 'Uploaded'}
-                                {item.status === 'failed' && (item.error ?? 'Failed')}
-                              </div>
-                              {isUploading && (
-                                <div className='w-full h-1.5 bg-muted rounded-full overflow-hidden'>
-                                  <div
-                                    className={`h-full transition-all duration-300 ease-out ${
-                                      item.status === 'failed' ? 'bg-destructive' : 'bg-primary'
-                                    }`}
-                                    style={{
-                                      width: `${item.status === 'uploaded' ? 100 : item.progress}%`,
-                                    }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          {!isUploading && (
-                            <td className='px-3 py-2'>
-                              <button
-                                type='button'
-                                onClick={() => removeFile(item.id)}
-                                className='inline-flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors'
-                                aria-label={`Remove ${item.file.name}`}
-                              >
-                                <X size={14} />
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <Button
-                type='submit'
-                className='w-full h-12 text-base font-semibold transition-transform hover:scale-[1.02] active:scale-[0.98]'
-                disabled={selectedFiles.length === 0 || isUploading}
-              >
-                {isUploading ? (
-                  <div className='flex items-center gap-2'>
-                    <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent' />
-                    <span>Uploading files...</span>
+                    )}
                   </div>
-                ) : (
-                  <div className='flex items-center gap-2'>
-                    <Upload size={18} />
-                    <span>Start Collaboration</span>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div className='rounded-md border overflow-hidden'>
+                    <table className='w-full text-sm'>
+                      <thead className='bg-muted/50'>
+                        <tr className='text-left'>
+                          <th className='px-3 py-2 font-medium text-muted-foreground'>File</th>
+                          <th className='px-3 py-2 font-medium text-muted-foreground'>Size</th>
+                          <th className='px-3 py-2 font-medium text-muted-foreground'>Status</th>
+                          {!isUploading && <th className='px-3 py-2 w-10' />}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedFiles.map((item) => (
+                          <tr key={item.id} className='border-t'>
+                            <td className='px-3 py-2 max-w-40 truncate' title={item.file.name}>
+                              {item.file.name}
+                            </td>
+                            <td className='px-3 py-2 text-muted-foreground'>{formatFileSize(item.file.size)}</td>
+                            <td className='px-3 py-2'>
+                              <div className='space-y-1'>
+                                <div className='text-xs text-muted-foreground'>
+                                  {item.status === 'queued' && 'Queued'}
+                                  {item.status === 'uploading' && `Uploading ${item.progress}%`}
+                                  {item.status === 'uploaded' && 'Uploaded'}
+                                  {item.status === 'failed' && (item.error ?? 'Failed')}
+                                </div>
+                                {isUploading && (
+                                  <div className='w-full h-1.5 bg-muted rounded-full overflow-hidden'>
+                                    <div
+                                      className={`h-full transition-all duration-300 ease-out ${
+                                        item.status === 'failed' ? 'bg-destructive' : 'bg-primary'
+                                      }`}
+                                      style={{
+                                        width: `${item.status === 'uploaded' ? 100 : item.progress}%`,
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            {!isUploading && (
+                              <td className='px-3 py-2'>
+                                <button
+                                  type='button'
+                                  onClick={() => removeFile(item.id)}
+                                  className='inline-flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors'
+                                  aria-label={`Remove ${item.file.name}`}
+                                >
+                                  <X size={14} />
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
-              </Button>
-            </form>
+
+                <Button
+                  type='submit'
+                  className='w-full h-12 text-base font-semibold transition-transform hover:scale-[1.02] active:scale-[0.98]'
+                  disabled={selectedFiles.length === 0 || isUploading}
+                >
+                  {isUploading ? (
+                    <div className='flex items-center gap-2'>
+                      <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent' />
+                      <span>Uploading files...</span>
+                    </div>
+                  ) : (
+                    <div className='flex items-center gap-2'>
+                      <Upload size={18} />
+                      <span>Upload files</span>
+                    </div>
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {step === 'invite' && (
+              <div className='space-y-5'>
+                <div className='rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground'>
+                  Uploaded {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''}. Session is ready:{' '}
+                  <span className='font-mono'>{collabSessionId}</span>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='invite-emails'>Participant emails</Label>
+                  <Textarea
+                    id='invite-emails'
+                    placeholder='teammate@example.com, reviewer@example.com'
+                    value={inviteInput}
+                    onChange={(event) => setInviteInput(event.target.value)}
+                    rows={6}
+                    disabled={isSubmittingInvites}
+                  />
+                  <p className='text-xs text-muted-foreground'>Separate emails with commas, semicolons, or new lines.</p>
+                </div>
+                <div className='flex gap-2'>
+                  <Button type='button' variant='outline' className='flex-1' onClick={handleSkipInvites}>
+                    Skip invites
+                  </Button>
+                  <Button
+                    type='button'
+                    className='flex-1'
+                    onClick={openInviteConfirmation}
+                    disabled={isSubmittingInvites || !collabSessionId}
+                  >
+                    Review and send invites
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -316,6 +432,36 @@ export default function Home() {
           Documents are uploaded to the cloud. Share the URL to collaborate.
         </p>
       </div>
+
+      <Dialog open={confirmInvitesOpen} onOpenChange={setConfirmInvitesOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm participant invites</DialogTitle>
+            <DialogDescription>
+              We&apos;ll create invite records for these emails and open your collaboration session.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='max-h-48 overflow-auto rounded-md border p-3 text-sm'>
+            {parseInviteEmails(inviteInput).length === 0 ? (
+              <p className='text-muted-foreground'>No invite emails entered. Continue to open session directly.</p>
+            ) : (
+              <ul className='space-y-1'>
+                {parseInviteEmails(inviteInput).map((email) => (
+                  <li key={email}>{email}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => setConfirmInvitesOpen(false)} disabled={isSubmittingInvites}>
+              Cancel
+            </Button>
+            <Button type='button' onClick={handleConfirmInvites} disabled={isSubmittingInvites}>
+              {isSubmittingInvites ? 'Submitting invites...' : 'Submit and open session'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

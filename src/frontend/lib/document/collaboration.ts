@@ -4,7 +4,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import YProvider from 'y-partyserver/provider';
 import * as Y from 'yjs';
 import type { Collaborator, ConnectionStatus, CursorPosition } from '@/lib/document/types';
-import { getStoredUserName, getUserColor } from '@/lib/username';
+import { getUserColor } from '@/lib/username';
 import { firstThen } from '../utils/first-then';
 
 const PARTY_HOST = `${window.location.host}/api`;
@@ -53,6 +53,7 @@ type TSetupYjsCollaborationParams = {
   getPartyParams?: () => Promise<PartyConnectionParams>;
   getDocumentId: () => string | undefined;
   Core: typeof Core;
+  userName: string;
 };
 const validStatuses = new Set<ConnectionStatus>(['connecting', 'connected', 'disconnected']);
 
@@ -74,6 +75,7 @@ export function setupYjsCollaboration({
   getDocumentId,
   documentViewer,
   Core,
+  userName,
 }: TSetupYjsCollaborationParams) {
   const ydoc = new Y.Doc();
   (window as any).ydoc = ydoc;
@@ -91,10 +93,9 @@ export function setupYjsCollaboration({
   const widgetDocumentsMap = ydoc.getMap<Y.Map<string>>('widget-documents');
 
   const setupCollaborators = () => {
-    const currentUser = getStoredUserName() || 'Guest';
     const currentColor = getUserColor();
     provider.awareness.setLocalStateField('user', {
-      name: currentUser,
+      name: userName,
       color: currentColor,
       annots: annotationManager.getAnnotationsList().length,
     });

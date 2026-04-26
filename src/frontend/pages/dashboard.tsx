@@ -11,9 +11,9 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 type DocumentRow = {
   id: string;
-  packet_id: string;
+  collab_session_id: string;
   filename: string;
-  status: 'pending' | 'ready';
+  status: 'pending' | 'ready' | 'failed';
   created_at: string;
   bucket_path: string;
 };
@@ -62,7 +62,7 @@ export default function DashboardPage() {
         minWidth: 180,
         valueFormatter: ({ value }) => (typeof value === 'string' ? formatCreatedAt(value) : ''),
       },
-      { field: 'packet_id', headerName: 'Packet ID', minWidth: 220 },
+      { field: 'collab_session_id', headerName: 'Session ID', minWidth: 220 },
       {
         colId: 'open',
         headerName: '',
@@ -71,7 +71,7 @@ export default function DashboardPage() {
         width: 100,
         cellRenderer: ({ data }: { data: DocumentRow }) => {
           if (!data) return '';
-          return `<a href="/document/${data.packet_id}" style="text-decoration:underline;">Open</a>`;
+          return `<a href="/document/${data.collab_session_id}" style="text-decoration:underline;">Open</a>`;
         },
       },
     ],

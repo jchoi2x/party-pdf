@@ -15,6 +15,7 @@ const dirname =
     ? __dirname
     : path.dirname(fileURLToPath(import.meta.url));
 
+console.log('dirname', dirname)
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 const rawPort = process.env.PORT || "3000";
 if (!rawPort) {
@@ -60,7 +61,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src/frontend"),
+      "@": path.resolve(import.meta.dirname, "src/frontend/"),
       "@/server": path.resolve(import.meta.dirname, "src/server"),
     }
   },

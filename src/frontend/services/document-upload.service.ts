@@ -1,7 +1,7 @@
 import type { HttpClient } from '@/services/http.client';
 
 interface UploadUrlResponse {
-  id: string;
+  collab_session_id: string;
   data: Array<{
     id: string;
     filename: string;
@@ -43,9 +43,25 @@ export type TExecuteBatchUploadFlowArgs = {
 };
 
 type UploadFlowResult = {
-  packetId: string;
+  collabSessionId: string;
   documentIds: string[];
 };
+
+export type InviteAudienceStatus = 'existing_user' | 'needs_registration' | 'failure';
+
+export interface SessionInviteResult {
+  email: string;
+  status: InviteAudienceStatus;
+  reason: string | null;
+  user_sub: string | null;
+  collab_session_id: string;
+  invite_status: 'pending' | 'sent' | 'failed' | 'accepted';
+}
+
+interface SessionInviteResponse {
+  collab_session_id: string;
+  results: SessionInviteResult[];
+}
 
 export class DocumentUploadService {
   constructor(private readonly http: HttpClient) {}
@@ -96,7 +112,7 @@ export class DocumentUploadService {
 
   async executeUploadFlow(args: TExecuteUploadFlowArgs): Promise<UploadFlowResult> {
     const { filename, contentType, file, onProgress } = args;
-    const { data, id: packetId } = await this.getUploadUrl({ filenames: [filename], contentType });
+    const { data, collab_session_id: collabSessionId } = await this.getUploadUrl({ filenames: [filename], contentType });
     const fileUpload = data.find((item) => item.filename === filename) ?? data[0];
 
     if (!fileUpload) {
@@ -105,14 +121,14 @@ export class DocumentUploadService {
 
     await this.uploadFile({ url: fileUpload.url, file, onProgress });
     return {
-      packetId,
+      collabSessionId,
       documentIds: data.map((item) => item.id),
     };
   }
 
   async executeBatchUploadFlow(args: TExecuteBatchUploadFlowArgs): Promise<UploadFlowResult> {
     const { files, contentType, concurrency = 4, onFileProgress, onFileStatusChange } = args;
-    const { data, id: packetId } = await this.getUploadUrl({
+    const { data, collab_session_id: collabSessionId } = await this.getUploadUrl({
       filenames: files.map((item) => item.filename),
       contentType,
     });
@@ -173,8 +189,22 @@ export class DocumentUploadService {
     }
 
     return {
-      packetId,
+      collabSessionId,
       documentIds: data.map((item) => item.id),
     };
+  }
+
+  async inviteParticipants(collabSessionId: string, emails: string[]): Promise<SessionInviteResponse> {
+    const response = await this.http.post<SessionInviteResponse>(`/api/collab-sessions/${collabSessionId}/invites`, {
+      body: JSON.stringify({ emails }),
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    if (!response.ok || typeof response.data === 'string') {
+      throw new Error('Failed to invite participants');
+    }
+    return response.data;
   }
 }

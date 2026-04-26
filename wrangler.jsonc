@@ -27,19 +27,29 @@
       ],
       "tag": "v3"
     },
+    {
+      "deleted_classes": [
+        "Document"
+      ],
+      "tag": "v4"
+    }
   ],
   "durable_objects": {
     "bindings": [
       {
         "class_name": "Room",
         "name": "ROOM"
-      },
-      {
-        "class_name": "Document",
-        "name": "DOC"
       }
     ]
   },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "747c62529a2f42d4b2a96ba45bde273f",
+      // Optional. Can be used to connect to a local database for local development with `wrangler dev`
+      "localConnectionString": "postgresql://neondb_owner:npg_zsl6QJYkopG8@ep-billowing-hill-amzalc2r-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    }
+  ],
   "observability": {
     "enabled": true,
     "logs": {

@@ -24,7 +24,7 @@ export default function Router() {
           <Route path='/' component={Home} />
           <Route path='/profile' component={ProfilePage} />
           <Route path='/dashboard' component={DashboardPage} />
-          <Route path='/document/:id' component={DocumentPage} />
+          <Route path='/document/:collabSessionId' component={DocumentPage} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>

@@ -1,19 +1,15 @@
-import { House, PencilSimple, VideoCamera } from '@phosphor-icons/react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { House, VideoCamera } from '@phosphor-icons/react';
 import { useLocation } from 'wouter';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getInitials, setStoredUserName } from '@/lib/username';
+import { getInitials } from '@/lib/username';
 import type { Collaborator } from '@/pages/document';
 
 interface DocumentHeaderProps {
   documentName: string;
   userName: string;
-  onUserNameChange: (name: string) => void;
   collaborators: Collaborator[];
   isMobile?: boolean;
   onMobileVideoToggle?: () => void;
@@ -24,38 +20,14 @@ const MAX_VISIBLE_AVATARS = 4;
 export default function DocumentHeader({
   documentName,
   userName,
-  onUserNameChange,
   collaborators,
   isMobile,
   onMobileVideoToggle,
 }: DocumentHeaderProps) {
   const [, navigate] = useLocation();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(userName);
 
   const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_AVATARS);
   const overflowCount = collaborators.length - MAX_VISIBLE_AVATARS;
-
-  function handleSaveName() {
-    const trimmed = editValue.trim();
-    if (!trimmed) {
-      toast.error('Name cannot be empty');
-      return;
-    }
-    setStoredUserName(trimmed);
-    onUserNameChange(trimmed);
-    setIsEditing(false);
-  }
-
-  function handleCancelEdit() {
-    setEditValue(userName);
-    setIsEditing(false);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') handleSaveName();
-    if (e.key === 'Escape') handleCancelEdit();
-  }
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -131,48 +103,16 @@ export default function DocumentHeader({
             </Button>
           )}
 
-          {isEditing ? (
-            <div className='flex items-center gap-2'>
-              <Input
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className='h-8 w-36 text-sm'
-                autoFocus
-              />
-              <Button size='sm' onClick={handleSaveName} className='h-8'>
-                Save
-              </Button>
-              <Button size='sm' variant='ghost' onClick={handleCancelEdit} className='h-8'>
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className='flex items-center gap-2'>
-                <Avatar className='h-9 w-9'>
-                  <AvatarFallback className='bg-primary text-primary-foreground text-xs font-semibold'>
-                    {getInitials(userName)}
-                  </AvatarFallback>
-                </Avatar>
-                <Badge variant='secondary' className='hidden sm:flex text-xs'>
-                  {userName}
-                </Badge>
-              </div>
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={() => {
-                  setEditValue(userName);
-                  setIsEditing(true);
-                }}
-                className='h-9 w-9'
-                title='Edit name'
-              >
-                <PencilSimple size={16} weight='bold' />
-              </Button>
-            </>
-          )}
+          <div className='flex items-center gap-2'>
+            <Avatar className='h-9 w-9'>
+              <AvatarFallback className='bg-primary text-primary-foreground text-xs font-semibold'>
+                {getInitials(userName)}
+              </AvatarFallback>
+            </Avatar>
+            <Badge variant='secondary' className='hidden sm:flex text-xs'>
+              {userName}
+            </Badge>
+          </div>
         </div>
       </header>
     </TooltipProvider>
