@@ -82,3 +82,50 @@ export async function patchAuth0UserNames(
     throw new Error(`Auth0 PATCH user failed (${res.status}): ${errBody.slice(0, 800)}`);
   }
 }
+
+type Auth0UserLookupResult = {
+  userId: string;
+  email: string;
+};
+
+/**
+ * Looks up a user by email using the Auth0 Management API.
+ * Returns `null` when no matching user exists.
+ */
+export async function findAuth0UserByEmail(
+  env: Auth0ManagementBindings,
+  email: string,
+): Promise<Auth0UserLookupResult | null> {
+  const host = tenantHost(env.AUTH0_DOMAIN);
+  const managementToken = await fetchManagementAccessToken(env);
+  const normalizedEmail = email.trim().toLowerCase();
+  const url = `https://${host}/api/v2/users-by-email?email=${encodeURIComponent(normalizedEmail)}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${managementToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const raw = await res.text();
+  if (!res.ok) {
+    throw new Error(`Auth0 users-by-email failed (${res.status}): ${raw.slice(0, 800)}`);
+  }
+
+  const parsed = JSON.parse(raw) as Array<{ user_id?: string; email?: string }>;
+  const first = parsed.find(
+    (entry) =>
+      typeof entry.user_id === 'string' &&
+      entry.user_id.length > 0 &&
+      typeof entry.email === 'string' &&
+      entry.email.length > 0,
+  );
+  if (!first) {
+    return null;
+  }
+  return {
+    userId: first.user_id!,
+    email: first.email!.trim().toLowerCase(),
+  };
+}

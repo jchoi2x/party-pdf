@@ -25,8 +25,8 @@ export const getTokenConfig = createRoute({
         },
       },
     },
-    400: {
-      description: 'Error response',
+    403: {
+      description: 'Forbidden',
       content: {
         'application/json': {
           schema: GetTokenErrorSchema,

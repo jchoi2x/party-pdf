@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { showRoutes } from 'hono/dev';
 import { logger } from 'hono/logger';
 import { getServerByName } from 'partyserver';
+import { actorFromJwt, isSessionParticipant } from './lib/db';
 import { requireAuth0Jwt } from './lib/middleware/auth';
 import { apiApp } from './lib/routes';
 import { withSentry } from './lib/sentry';
@@ -13,6 +14,11 @@ app.use(logger());
 app.route('', apiApp);
 app.get('/parties/room/:id', requireAuth0Jwt, async (c) => {
   const id = c.req.param('id');
+  const actor = actorFromJwt(c.get('jwtPayload'));
+  const hasAccess = await isSessionParticipant(c.env, id, actor);
+  if (!hasAccess) {
+    return c.json({ error: 'forbidden', message: 'You are not a participant in this session.' }, 403);
+  }
   const server = await getServerByName(c.env.ROOM, id.toString());
   const response = await server.fetch(c.req.raw);
   return response;
@@ -21,4 +27,4 @@ app.get('/parties/room/:id', requireAuth0Jwt, async (c) => {
 showRoutes(app);
 
 export default withSentry(app);
-export { Document, Room } from './lib/durable';
+export { Room } from './lib/durable';
