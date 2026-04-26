@@ -1,0 +1,36 @@
+---
+description: Fix all typescript errors on lines changed by the agent
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+import { Meta } from '@storybook/blocks';
+
+<Meta id="rule-typescript-changed-lines" title="Cursor Rule — TypeScript Errors on Changed Lines" />
+
+# TypeScript Changed-Lines Quality Gate
+
+## Scope
+
+Applies to every task that edits any `.ts` or `.tsx` file.
+
+## Required behavior
+
+1. Before completing a task, verify TypeScript errors for edited files/lines.
+2. If a changed line has a TypeScript error, fix it before finishing.
+3. Do not leave new TypeScript errors on touched lines.
+4. If a fix cannot be completed safely, explicitly report the blocker and the exact remaining error.
+
+## Verification command
+
+Run:
+
+```bash
+bun run typecheck
+```
+
+If needed, run file-scoped checks in addition to full typecheck.
+
+## Completion gate
+
+A task is **not complete** until changed lines are free of TypeScript errors.
