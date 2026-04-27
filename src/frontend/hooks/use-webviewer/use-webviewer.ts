@@ -14,10 +14,10 @@ import type { Collaborator, ConnectionStatus } from '@/lib/document/types';
 import { getStoredUserName } from '@/lib/username';
 import { configureWebViewerInstance, getWebViewerConstructorOptions } from './lib/configuration';
 
-type PacketDocumentsResponse = {
+type SessionDocumentsResponse = {
   data: Array<{
     id: string;
-    packetId: string;
+    sessionId: string;
     filename: string;
     downloadUrl: string;
   }>;
@@ -70,18 +70,18 @@ export function useWebViewer({
     async function init() {
       try {
         let name = '';
-        let packetDocs: PacketDocumentsResponse['data'] = [];
+        let sessionDocs: SessionDocumentsResponse['data'] = [];
 
         try {
-          const res = await apiFetch(`${variables.apiBase}/docs/by-packet-id/${id}`);
-          if (!res.ok) throw new Error('Failed to fetch packet documents');
-          const data = (await res.json()) as PacketDocumentsResponse;
-          packetDocs = data.data ?? [];
-          if (packetDocs.length > 0) {
-            name = packetDocs[0]?.filename ?? 'Shared Documents';
+          const res = await apiFetch(`${variables.apiBase}/docs/by-session-id/${id}`);
+          if (!res.ok) throw new Error('Failed to fetch session documents');
+          const data = (await res.json()) as SessionDocumentsResponse;
+          sessionDocs = data.data ?? [];
+          if (sessionDocs.length > 0) {
+            name = sessionDocs[0]?.filename ?? 'Shared Documents';
           }
         } catch (cloudErr) {
-          console.warn('Cloud packet fetch failed, trying local fallback:', cloudErr);
+          console.warn('Cloud session fetch failed, trying local fallback:', cloudErr);
         }
 
         setDocName(name);
@@ -92,10 +92,14 @@ export function useWebViewer({
         const instance = await WebViewer(getWebViewerConstructorOptions(), viewerRef.current);
 
         viewerInstanceRef.current = instance;
-        // biome-ignore lint/suspicious/noExplicitAny: this is for debugging purposes
-        (window as any).instance = instance;
-        (window as any).dv = instance.Core.documentViewer;
-        (window as any).am = instance.Core.annotationManager;
+        const debugWindow = window as Window & {
+          instance?: typeof instance;
+          dv?: typeof instance.Core.documentViewer;
+          am?: typeof instance.Core.annotationManager;
+        };
+        debugWindow.instance = instance;
+        debugWindow.dv = instance.Core.documentViewer;
+        debugWindow.am = instance.Core.annotationManager;
 
         try {
           const english = translateEn;
@@ -115,7 +119,7 @@ export function useWebViewer({
           const documentId = doc ? doc.getDocumentId() : undefined;
           if (documentId && !Number.isNaN(parseInt(documentId, 10))) {
             const filename = doc.getFilename();
-            const docId = packetDocs.find((doc) => doc.filename === filename)?.id;
+            const docId = sessionDocs.find((doc) => doc.filename === filename)?.id;
             return docId!;
           }
           return documentId;
@@ -150,14 +154,14 @@ export function useWebViewer({
 
         configureWebViewerInstance(instance, isDark);
 
-        Array.from(packetDocs)
+        Array.from(sessionDocs)
           .reverse()
           .forEach(({ downloadUrl, filename, id }, index) => {
             console.log('adding tab', { downloadUrl, filename, documentId: id, index });
             instance.UI.TabManager.addTab(downloadUrl, {
               filename,
               documentId: id,
-              setActive: index === packetDocs.length - 1,
+              setActive: index === sessionDocs.length - 1,
             });
           });
       } catch (err) {

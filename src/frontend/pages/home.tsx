@@ -113,7 +113,7 @@ export default function Home() {
 
     try {
       const fileIdByIndex = selectedFiles.map((item) => item.id);
-      const { packetId } = await uploadService.executeBatchUploadFlow({
+      const { sessionId } = await uploadService.executeBatchUploadFlow({
         files: selectedFiles.map((item) => ({
           file: item.file,
           filename: item.file.name,
@@ -144,7 +144,7 @@ export default function Home() {
       });
 
       setIsUploading(false);
-      navigate(`/document/${packetId}`);
+      navigate(`/document/${sessionId}`);
     } catch (err) {
       console.error('Cloud upload failed:', err);
       toast.error('One or more uploads failed. Please try again.');

@@ -1,17 +1,17 @@
 import type { RouteHandler } from '@hono/zod-openapi';
 
-import type { DocsByPacketIdConfig } from './docs-by-packet-id.config';
+import type { DocsBySessionIdConfig } from './docs-by-session-id.config';
 
-export const docsByPacketIdHandler: RouteHandler<DocsByPacketIdConfig, { Bindings: Env }> = async (c) => {
+export const docsBySessionIdHandler: RouteHandler<DocsBySessionIdConfig, { Bindings: Env }> = async (c) => {
   const jwtPayload = c.get('jwtPayload');
   const ownerId = jwtPayload.sub;
   if (!ownerId) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  const { packet_id: packetId } = c.req.valid('param');
+  const { session_id: sessionId } = c.req.valid('param');
   const documentsRepository = c.get('documentsRepository');
-  const data = await documentsRepository.getByOwnerAndPacket(ownerId, packetId);
+  const data = await documentsRepository.getByOwnerAndSession(ownerId, sessionId);
 
   return c.json(
     {

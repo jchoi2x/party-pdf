@@ -43,7 +43,7 @@ export type TExecuteBatchUploadFlowArgs = {
 };
 
 type UploadFlowResult = {
-  packetId: string;
+  sessionId: string;
   documentIds: string[];
 };
 
@@ -96,7 +96,7 @@ export class DocumentUploadService {
 
   async executeUploadFlow(args: TExecuteUploadFlowArgs): Promise<UploadFlowResult> {
     const { filename, contentType, file, onProgress } = args;
-    const { data, id: packetId } = await this.getUploadUrl({ filenames: [filename], contentType });
+    const { data, id: sessionId } = await this.getUploadUrl({ filenames: [filename], contentType });
     const fileUpload = data.find((item) => item.filename === filename) ?? data[0];
 
     if (!fileUpload) {
@@ -105,14 +105,14 @@ export class DocumentUploadService {
 
     await this.uploadFile({ url: fileUpload.url, file, onProgress });
     return {
-      packetId,
+      sessionId,
       documentIds: data.map((item) => item.id),
     };
   }
 
   async executeBatchUploadFlow(args: TExecuteBatchUploadFlowArgs): Promise<UploadFlowResult> {
     const { files, contentType, concurrency = 4, onFileProgress, onFileStatusChange } = args;
-    const { data, id: packetId } = await this.getUploadUrl({
+    const { data, id: sessionId } = await this.getUploadUrl({
       filenames: files.map((item) => item.filename),
       contentType,
     });
@@ -173,7 +173,7 @@ export class DocumentUploadService {
     }
 
     return {
-      packetId,
+      sessionId,
       documentIds: data.map((item) => item.id),
     };
   }

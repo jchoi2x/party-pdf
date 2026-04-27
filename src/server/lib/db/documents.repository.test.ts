@@ -41,11 +41,11 @@ describe('createDocumentsRepository', () => {
     await repo.createMany([
       {
         ownerId: 'auth0|1',
-        packetId: 'packet-1',
+        sessionId: 'session-1',
         filename: 'doc.pdf',
         url: 'https://signed-upload-url',
         downloadUrl: 'https://public-download-url',
-        bucketPath: 'auth0|1/packet-1/file.pdf',
+        bucketPath: 'auth0|1/session-1/file.pdf',
         createdAt: '12345',
         status: 'pending',
       },
@@ -53,6 +53,30 @@ describe('createDocumentsRepository', () => {
 
     expect(insert).toHaveBeenCalledTimes(1);
     expect(values).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates session and leader participant', async () => {
+    const returning = vi.fn().mockResolvedValue([{ id: 'session-1' }]);
+    const firstValues = vi.fn(() => ({ returning }));
+    const secondValues = vi.fn().mockResolvedValue(undefined);
+    const insert = vi.fn().mockImplementationOnce(() => ({ values: firstValues })).mockImplementationOnce(() => ({ values: secondValues }));
+    getDbMock.mockReturnValue({
+      insert,
+    } as unknown as ReturnType<typeof getDb>);
+
+    const repo = createDocumentsRepository(env);
+    const sessionId = await repo.createSessionWithLeader('auth0|1');
+
+    expect(sessionId).toBe('session-1');
+    expect(insert).toHaveBeenCalledTimes(2);
+    expect(firstValues).toHaveBeenCalledTimes(1);
+    expect(secondValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 'session-1',
+        userId: 'auth0|1',
+        role: 'leader',
+      }),
+    );
   });
 
   it('returns paged owner results with computed totals', async () => {
@@ -63,11 +87,11 @@ describe('createDocumentsRepository', () => {
       {
         id: 'doc-1',
         ownerId: 'auth0|1',
-        packetId: 'packet-1',
+        sessionId: 'session-1',
         filename: 'doc.pdf',
         url: 'https://signed-upload-url',
         downloadUrl: 'https://public-download-url',
-        bucketPath: 'auth0|1/packet-1/file.pdf',
+        bucketPath: 'auth0|1/session-1/file.pdf',
         createdAt: '12345',
         status: 'pending',
       },

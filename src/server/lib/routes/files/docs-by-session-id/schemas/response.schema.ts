@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 const DocumentSchema = z.object({
   id: z.string(),
-  packetId: z.string(),
+  sessionId: z.string(),
   filename: z.string(),
   url: z.string(),
   downloadUrl: z.string(),
@@ -11,8 +11,8 @@ const DocumentSchema = z.object({
   status: z.enum(['pending', 'ready']),
 });
 
-export const DocsByPacketIdResponseSchema = z.object({
+export const DocsBySessionIdResponseSchema = z.object({
   data: z.array(DocumentSchema),
 });
 
-export type DocsByPacketIdResponse = z.infer<typeof DocsByPacketIdResponseSchema>;
+export type DocsBySessionIdResponse = z.infer<typeof DocsBySessionIdResponseSchema>;

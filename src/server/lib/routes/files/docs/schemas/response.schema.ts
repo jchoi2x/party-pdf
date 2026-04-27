@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 const DocumentSchema = z.object({
   id: z.string(),
-  packetId: z.string(),
+  sessionId: z.string(),
   filename: z.string(),
   url: z.string(),
   downloadUrl: z.string(),

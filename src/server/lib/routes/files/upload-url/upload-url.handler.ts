@@ -21,12 +21,13 @@ export const uploadUrlHandler = async (c: Ctx) => {
 
   const filenames = c.req.queries('filenames') ?? [];
   const contentType = c.req.query('contentType') ?? 'application/pdf';
-  const packetId = crypto.randomUUID();
+  const documentsRepository = c.get('documentsRepository');
+  const sessionId = await documentsRepository.createSessionWithLeader(ownerId);
   const { generateUploadUrl } = initS3Client();
 
   const data = await Promise.all(
     filenames.map((filename) => {
-      const prefix = `${ownerId}/${packetId}`;
+      const prefix = `${ownerId}/${sessionId}`;
       return generateUploadUrl({
         prefix,
         contentType,
@@ -35,10 +36,9 @@ export const uploadUrlHandler = async (c: Ctx) => {
     }),
   );
 
-  const documentsRepository = c.get('documentsRepository');
   const rows: NewDocument[] = data.map((doc) => ({
     ownerId,
-    packetId,
+    sessionId,
     filename: doc.filename,
     url: doc.url,
     downloadUrl: doc.downloadUrl,
@@ -48,5 +48,5 @@ export const uploadUrlHandler = async (c: Ctx) => {
   }));
   await documentsRepository.createMany(rows);
 
-  return c.json({ data, id: packetId }, 200);
+  return c.json({ data, id: sessionId }, 200);
 };

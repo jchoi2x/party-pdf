@@ -11,7 +11,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 type DocumentRow = {
   id: string;
-  packetId: string;
+  sessionId: string;
   filename: string;
   status: 'pending' | 'ready';
   createdAt: string;
@@ -62,7 +62,7 @@ export default function DashboardPage() {
         minWidth: 180,
         valueFormatter: ({ value }) => (typeof value === 'string' ? formatCreatedAt(value) : ''),
       },
-      { field: 'packetId', headerName: 'Packet ID', minWidth: 220 },
+      { field: 'sessionId', headerName: 'Session ID', minWidth: 220 },
       {
         colId: 'open',
         headerName: '',
@@ -71,7 +71,7 @@ export default function DashboardPage() {
         width: 100,
         cellRenderer: ({ data }: { data: DocumentRow }) => {
           if (!data) return '';
-          return `<a href="/document/${data.packetId}" style="text-decoration:underline;">Open</a>`;
+          return `<a href="/document/${data.sessionId}" style="text-decoration:underline;">Open</a>`;
         },
       },
     ],

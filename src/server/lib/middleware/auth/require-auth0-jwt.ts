@@ -68,8 +68,8 @@ export async function verifyAuth0AccessToken(env: Auth0JwtBindings, token: strin
  * Accepts `Authorization: Bearer <token>` or query `access_token` (e.g. WebSocket upgrade).
  */
 export const requireAuth0Jwt = factory.createMiddleware(async (c, next) => {
-  const domainRaw = c.env.AUTH0_DOMAIN?.trim();
-  const audience = c.env.AUTH0_AUDIENCE?.trim();
+  const domainRaw = c.env?.AUTH0_DOMAIN?.trim();
+  const audience = c.env?.AUTH0_AUDIENCE?.trim();
   if (!domainRaw || !audience) {
     return c.json({ error: 'Server Auth0 verification is not configured.' }, 500);
   }

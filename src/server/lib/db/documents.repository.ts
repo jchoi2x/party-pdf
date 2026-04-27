@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { getDb } from './index';
-import { type Document, documents, type NewDocument } from './schema';
+import { type Document, documents, participants, type NewDocument, sessions } from './schema';
 
 export interface DocumentsPage {
   data: Document[];
@@ -11,8 +11,9 @@ export interface DocumentsPage {
 }
 
 interface IDocumentsRepository {
+  createSessionWithLeader(ownerId: string): Promise<string>;
   createMany(rows: NewDocument[]): Promise<void>;
-  getByOwnerAndPacket(ownerId: string, packetId: string): Promise<Document[]>;
+  getByOwnerAndSession(ownerId: string, sessionId: string): Promise<Document[]>;
   getPageByOwner(ownerId: string, page: number, limit: number): Promise<DocumentsPage>;
 }
 
@@ -22,6 +23,27 @@ class DocumentsRepository implements IDocumentsRepository {
     this.db = getDb(env);
   }
 
+  async createSessionWithLeader(ownerId: string): Promise<string> {
+    const createdAt = Date.now().toString();
+    const [session] = await this.db
+      .insert(sessions)
+      .values({
+        ownerId,
+        createdAt,
+      })
+      .returning({ id: sessions.id });
+    if (!session?.id) {
+      throw new Error('Failed to create session.');
+    }
+    await this.db.insert(participants).values({
+      sessionId: session.id,
+      userId: ownerId,
+      role: 'leader',
+      createdAt,
+    });
+    return session.id;
+  }
+
   async createMany(rows: NewDocument[]): Promise<void> {
     if (rows.length === 0) {
       return;
@@ -29,11 +51,11 @@ class DocumentsRepository implements IDocumentsRepository {
     await this.db.insert(documents).values(rows);
   }
 
-  async getByOwnerAndPacket(ownerId: string, packetId: string): Promise<Document[]> {
+  async getByOwnerAndSession(ownerId: string, sessionId: string): Promise<Document[]> {
     return this.db
       .select()
       .from(documents)
-      .where(and(eq(documents.ownerId, ownerId), eq(documents.packetId, packetId)))
+      .where(and(eq(documents.ownerId, ownerId), eq(documents.sessionId, sessionId)))
       .orderBy(desc(documents.createdAt));
   }
 
