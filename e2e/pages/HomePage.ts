@@ -2,7 +2,8 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 export class HomePage {
   private readonly uploadInput: Locator;
-  private readonly startCollaborationButton: Locator;
+  private readonly uploadAndContinueButton: Locator;
+  private readonly skipToSessionButton: Locator;
   private readonly setNameDialogTitle: Locator;
   private readonly firstNameInput: Locator;
   private readonly lastNameInput: Locator;
@@ -10,7 +11,8 @@ export class HomePage {
 
   constructor(private readonly page: Page) {
     this.uploadInput = this.page.locator('#pdf-upload');
-    this.startCollaborationButton = this.page.getByRole('button', { name: /start collaboration/i });
+    this.uploadAndContinueButton = this.page.getByRole('button', { name: /upload & continue/i });
+    this.skipToSessionButton = this.page.getByRole('button', { name: /skip.*open session only/i });
     this.setNameDialogTitle = this.page.getByRole('heading', { name: /set your name/i });
     this.firstNameInput = this.page.getByPlaceholder('First name');
     this.lastNameInput = this.page.getByPlaceholder('Last name');
@@ -19,7 +21,7 @@ export class HomePage {
 
   async expectLoaded(): Promise<void> {
     await expect(this.uploadInput).toBeAttached();
-    await expect(this.startCollaborationButton).toBeVisible();
+    await expect(this.uploadAndContinueButton).toBeVisible();
   }
 
   async completeProfilePromptIfPresent(): Promise<void> {
@@ -42,12 +44,13 @@ export class HomePage {
 
   async uploadPdfs(filePaths: string[]): Promise<void> {
     await this.uploadInput.setInputFiles(filePaths);
-    const count = filePaths.length;
-    await expect(this.page.getByText(new RegExp(`${count} PDF file`))).toBeVisible();
+    await expect(this.uploadAndContinueButton).toBeEnabled();
   }
 
   async startCollaboration(): Promise<void> {
-    await this.startCollaborationButton.click();
+    await this.uploadAndContinueButton.click();
+    await expect(this.skipToSessionButton).toBeVisible({ timeout: 30_000 });
+    await this.skipToSessionButton.click();
   }
 
   async expectRedirectedToDocumentPage(): Promise<void> {
