@@ -12,10 +12,17 @@ export const getSessionsHandler: RouteHandler<GetSessionsConfig, { Bindings: Env
   const { limit, page } = c.req.valid('query');
   const documentsRepository = c.get('documentsRepository');
   const { data, total, totalPages } = await documentsRepository.getSessionsWithDetailsPageByOwner(ownerId, page, limit);
+  const responseData = data.map(({ session, documents, participants }) => ({
+    session,
+    documents: documents.flatMap(({ ownerId: _ownerId, sessionId, ...doc }) =>
+      sessionId ? [{ ...doc, sessionId }] : [],
+    ),
+    participants,
+  }));
 
   return c.json(
     {
-      data,
+      data: responseData,
       total,
       totalPages,
       page,

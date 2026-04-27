@@ -12,10 +12,13 @@ export const getDocumentsHandler: RouteHandler<GetDocumentsConfig, { Bindings: E
   const { session_id: sessionId } = c.req.valid('param');
   const documentsRepository = c.get('documentsRepository');
   const data = await documentsRepository.getByOwnerAndSession(ownerId, sessionId);
+  const responseData = data.flatMap(({ ownerId: _ownerId, sessionId: repositorySessionId, ...doc }) =>
+    repositorySessionId ? [{ ...doc, sessionId: repositorySessionId }] : [],
+  );
 
   return c.json(
     {
-      data: data.map(({ ownerId: _ownerId, ...doc }) => doc),
+      data: responseData,
     },
     200,
   );

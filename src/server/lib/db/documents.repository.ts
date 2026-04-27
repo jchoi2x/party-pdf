@@ -30,7 +30,7 @@ export interface SessionsWithDetailsPage {
   limit: number;
 }
 
-interface IDocumentsRepository {
+export interface IDocumentsRepository {
   createSessionWithLeader(ownerId: string): Promise<string>;
   createMany(rows: NewDocument[]): Promise<void>;
   getByOwnerAndSession(ownerId: string, sessionId: string): Promise<Document[]>;
@@ -207,6 +207,9 @@ class DocumentsRepository implements IDocumentsRepository {
 
     const documentsBySession = new Map<string, Document[]>();
     for (const doc of sessionDocuments) {
+      if (!doc.sessionId) {
+        continue;
+      }
       const row = documentsBySession.get(doc.sessionId) ?? [];
       row.push(doc);
       documentsBySession.set(doc.sessionId, row);
@@ -233,6 +236,6 @@ class DocumentsRepository implements IDocumentsRepository {
   }
 }
 
-export const createDocumentsRepository = (env: Env) => {
+export const createDocumentsRepository = (env: Env): IDocumentsRepository => {
   return new DocumentsRepository(env);
 };

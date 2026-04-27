@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { IDocumentsRepository } from '../../db/documents.repository';
 import { attachDocumentsRouter } from './attach-documents';
 import { createSessionRouter } from './create-session';
 import { getDocumentsRouter } from './get-documents';
@@ -38,12 +39,16 @@ describe('session endpoint routers', () => {
     });
   });
 
-  function repo() {
+  function repo(): IDocumentsRepository {
     return {
       createSessionWithLeader: vi.fn().mockResolvedValue('session-1'),
-      getSessionsWithDetailsPageByOwner: vi.fn().mockResolvedValue({ data: [], total: 0, totalPages: 0 }),
+      createMany: vi.fn().mockResolvedValue(undefined),
+      getPageByOwner: vi.fn().mockResolvedValue({ data: [], total: 0, totalPages: 0, page: 1, limit: 10 }),
+      getSessionsWithDetailsPageByOwner: vi
+        .fn()
+        .mockResolvedValue({ data: [], total: 0, totalPages: 0, page: 1, limit: 10 }),
       getByOwnerAndSession: vi.fn().mockResolvedValue([]),
-      getSessionIfOwnedBy: vi.fn().mockResolvedValue({ id: 'session-1', ownerId: 'auth0|abc' }),
+      getSessionIfOwnedBy: vi.fn().mockResolvedValue({ id: 'session-1' }),
       attachDocumentsToSession: vi.fn().mockResolvedValue({ attachedCount: 1, attachedIds: ['doc-1'] }),
       addParticipantMember: vi.fn().mockResolvedValue(undefined),
     };

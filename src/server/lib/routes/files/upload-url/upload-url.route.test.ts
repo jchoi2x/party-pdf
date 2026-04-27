@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { IDocumentsRepository } from '../../../db/documents.repository';
 import { uploadUrlRouter } from './upload-url.route';
 
 const createUploadUrlsMock = vi.hoisted(() => vi.fn());
@@ -19,11 +20,23 @@ describe('uploadUrlRouter', () => {
 
   function app(jwtPayload?: Record<string, unknown>) {
     const app = new Hono<{ Bindings: Env }>();
+    const documentsRepository: IDocumentsRepository = {
+      createSessionWithLeader: vi.fn().mockResolvedValue('session-1'),
+      createMany: vi.fn().mockResolvedValue(undefined),
+      getByOwnerAndSession: vi.fn().mockResolvedValue([]),
+      getPageByOwner: vi.fn().mockResolvedValue({ data: [], total: 0, totalPages: 0, page: 1, limit: 10 }),
+      getSessionsWithDetailsPageByOwner: vi
+        .fn()
+        .mockResolvedValue({ data: [], total: 0, totalPages: 0, page: 1, limit: 10 }),
+      getSessionIfOwnedBy: vi.fn().mockResolvedValue({ id: 'session-1' }),
+      addParticipantMember: vi.fn().mockResolvedValue(undefined),
+      attachDocumentsToSession: vi.fn().mockResolvedValue({ attachedCount: 0, attachedIds: [] }),
+    };
     app.use('*', async (c, next) => {
       if (jwtPayload) {
         c.set('jwtPayload', jwtPayload);
       }
-      c.set('documentsRepository', { createMany: vi.fn().mockResolvedValue(undefined) });
+      c.set('documentsRepository', documentsRepository);
       await next();
     });
     app.route('', uploadUrlRouter);

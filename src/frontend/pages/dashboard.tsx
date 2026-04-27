@@ -1,5 +1,6 @@
-import { ClientSideRowModelModule, type ColDef, type IDetailCellRendererParams } from 'ag-grid-community';
-import { LicenseManager, MasterDetailModule, ModuleRegistry } from 'ag-grid-enterprise';
+import type { ColDef, IDetailCellRendererParams } from 'ag-grid-community';
+import { LicenseManager } from 'ag-grid-enterprise';
+import 'ag-grid-enterprise';
 import { AgGridReact } from 'ag-grid-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -51,9 +52,11 @@ type SessionsResponse = {
   limit: number;
 };
 
+type SessionValueFormatterParams = { value: unknown };
+type SessionValueGetterParams = { data: SessionRow | undefined };
+
 let agGridInitialized = false;
 if (!agGridInitialized) {
-  ModuleRegistry.registerModules([ClientSideRowModelModule, MasterDetailModule]);
   if (vars.agGridLicenseKey) {
     LicenseManager.setLicenseKey(vars.agGridLicenseKey);
   }
@@ -126,20 +129,20 @@ export default function DashboardPage() {
         field: 'createdAt',
         headerName: 'Created At',
         minWidth: 180,
-        valueFormatter: ({ value }) => (typeof value === 'string' ? formatCreatedAt(value) : ''),
+        valueFormatter: ({ value }: SessionValueFormatterParams) => (typeof value === 'string' ? formatCreatedAt(value) : ''),
       },
       { field: 'id', headerName: 'Session ID', minWidth: 260, flex: 1.4 },
       {
         colId: 'documentsCount',
         headerName: 'Documents',
         width: 120,
-        valueGetter: ({ data }) => data?.documents?.length ?? 0,
+        valueGetter: ({ data }: SessionValueGetterParams) => data?.documents?.length ?? 0,
       },
       {
         colId: 'participantsCount',
         headerName: 'Participants',
         width: 130,
-        valueGetter: ({ data }) => data?.participants?.length ?? 0,
+        valueGetter: ({ data }: SessionValueGetterParams) => data?.participants?.length ?? 0,
       },
       {
         colId: 'open',
@@ -180,7 +183,7 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                data.documents.map((doc) => (
+                data.documents.map((doc: DocumentRow) => (
                   <tr key={doc.id} className='border-b border-border/50'>
                     <td className='py-1'>{doc.filename}</td>
                     <td className='py-1'>{doc.status}</td>
@@ -209,7 +212,7 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                data.participants.map((participant) => (
+                data.participants.map((participant: ParticipantRow) => (
                   <tr key={participant.id} className='border-b border-border/50'>
                     <td className='py-1'>{participant.userId}</td>
                     <td className='py-1'>{participant.role}</td>
