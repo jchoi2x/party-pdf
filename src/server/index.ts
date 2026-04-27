@@ -21,4 +21,4 @@ app.get('/parties/room/:id', requireAuth0Jwt, async (c) => {
 showRoutes(app);
 
 export default withSentry(app);
-export { Document, Room } from './lib/durable';
+export { Room } from './lib/durable';

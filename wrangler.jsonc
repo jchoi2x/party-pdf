@@ -26,6 +26,12 @@
         "Document"
       ],
       "tag": "v3"
+		},
+		{
+			"deleted_classes": [
+				"Document"
+			],
+			"tag": "v4"
     },
   ],
   "durable_objects": {
@@ -33,10 +39,6 @@
       {
         "class_name": "Room",
         "name": "ROOM"
-      },
-      {
-        "class_name": "Document",
-        "name": "DOC"
       }
     ]
   },
@@ -48,7 +50,17 @@
     "head_sampling_rate": 1 // optional. default = 1.
   },
   "upload_source_maps": true,
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "party_pdf_db",
+      "database_name": "party-pdf-db",
+      "database_id": "fdd3ea56-72d6-4312-83e9-532a384aa3fa",
+      "migrations_dir": "drizzle"
+    }
+  ],
   // Bearer access tokens are verified with JWKS (see require-auth0-jwt). No AUTH0_CLIENT_SECRET on the Worker for that flow.
   // Profile PATCH uses Auth0 Management API — set AUTH0_MANAGEMENT_CLIENT_ID / AUTH0_MANAGEMENT_CLIENT_SECRET in secrets or .dev.vars (M2M app with update:users)
 }
