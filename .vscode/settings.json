@@ -10,6 +10,7 @@
     "**/dist": true,
     "**/.wrangler": true,
     "playwright-report": true,
+    "test-results": true,
   },
   "typescript.experimental.useTsgo": true,
   "json.schemaDownload.enable": true,

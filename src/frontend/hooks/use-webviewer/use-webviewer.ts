@@ -17,9 +17,9 @@ import { configureWebViewerInstance, getWebViewerConstructorOptions } from './li
 type PacketDocumentsResponse = {
   data: Array<{
     id: string;
-    packet_id: string;
+    packetId: string;
     filename: string;
-    download_url: string;
+    downloadUrl: string;
   }>;
 };
 
@@ -152,9 +152,9 @@ export function useWebViewer({
 
         Array.from(packetDocs)
           .reverse()
-          .forEach(({ download_url, filename, id }, index) => {
-            console.log('adding tab', { download_url, filename, documentId: id, index });
-            instance.UI.TabManager.addTab(download_url, {
+          .forEach(({ downloadUrl, filename, id }, index) => {
+            console.log('adding tab', { downloadUrl, filename, documentId: id, index });
+            instance.UI.TabManager.addTab(downloadUrl, {
               filename,
               documentId: id,
               setActive: index === packetDocs.length - 1,

@@ -1,6 +1,5 @@
 import type { Context } from 'hono';
 
-import { createDocumentsRepository } from '../../../db/documents.repository';
 import type { NewDocument } from '../../../db/schema';
 import { initS3Client } from '../../../utils/s3';
 
@@ -36,7 +35,7 @@ export const uploadUrlHandler = async (c: Ctx) => {
     }),
   );
 
-  const documentsRepository = createDocumentsRepository(c.env);
+  const documentsRepository = c.get('documentsRepository');
   const rows: NewDocument[] = data.map((doc) => ({
     ownerId,
     packetId,

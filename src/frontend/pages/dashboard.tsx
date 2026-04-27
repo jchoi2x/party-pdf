@@ -11,11 +11,11 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 type DocumentRow = {
   id: string;
-  packet_id: string;
+  packetId: string;
   filename: string;
   status: 'pending' | 'ready';
-  created_at: string;
-  bucket_path: string;
+  createdAt: string;
+  bucketPath: string;
 };
 
 type DocumentsResponse = {
@@ -57,12 +57,12 @@ export default function DashboardPage() {
       { field: 'filename', headerName: 'Filename', flex: 1.6, minWidth: 240 },
       { field: 'status', headerName: 'Status', width: 120 },
       {
-        field: 'created_at',
+        field: 'createdAt',
         headerName: 'Uploaded At',
         minWidth: 180,
         valueFormatter: ({ value }) => (typeof value === 'string' ? formatCreatedAt(value) : ''),
       },
-      { field: 'packet_id', headerName: 'Packet ID', minWidth: 220 },
+      { field: 'packetId', headerName: 'Packet ID', minWidth: 220 },
       {
         colId: 'open',
         headerName: '',
@@ -71,7 +71,7 @@ export default function DashboardPage() {
         width: 100,
         cellRenderer: ({ data }: { data: DocumentRow }) => {
           if (!data) return '';
-          return `<a href="/document/${data.packet_id}" style="text-decoration:underline;">Open</a>`;
+          return `<a href="/document/${data.packetId}" style="text-decoration:underline;">Open</a>`;
         },
       },
     ],

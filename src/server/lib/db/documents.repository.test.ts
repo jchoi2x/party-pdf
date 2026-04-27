@@ -10,6 +10,8 @@ vi.mock('./index', () => ({
 const getDbMock = vi.mocked(getDb);
 
 describe('createDocumentsRepository', () => {
+  const env = {} as Env;
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -21,7 +23,7 @@ describe('createDocumentsRepository', () => {
       insert,
     } as unknown as ReturnType<typeof getDb>);
 
-    const repo = createDocumentsRepository({} as Env);
+    const repo = createDocumentsRepository(env);
     await repo.createMany([]);
 
     expect(insert).not.toHaveBeenCalled();
@@ -35,7 +37,7 @@ describe('createDocumentsRepository', () => {
       insert,
     } as unknown as ReturnType<typeof getDb>);
 
-    const repo = createDocumentsRepository({} as Env);
+    const repo = createDocumentsRepository(env);
     await repo.createMany([
       {
         ownerId: 'auth0|1',
@@ -84,7 +86,7 @@ describe('createDocumentsRepository', () => {
       select,
     } as unknown as ReturnType<typeof getDb>);
 
-    const repo = createDocumentsRepository({} as Env);
+    const repo = createDocumentsRepository(env);
     const page = await repo.getPageByOwner('auth0|1', 2, 5);
 
     expect(page.total).toBe(11);

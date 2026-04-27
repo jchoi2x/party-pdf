@@ -1,6 +1,8 @@
-import { createMiddleware } from 'hono/factory';
+import { createFactory } from 'hono/factory';
 import type { JWTPayload } from 'jose';
 import * as jose from 'jose';
+
+const factory = createFactory<{ Bindings: Env; Variables: { jwtPayload: JWTPayload; }; }>();
 
 const jwksByDomain = new Map<string, ReturnType<typeof jose.createRemoteJWKSet>>();
 
@@ -65,7 +67,7 @@ export async function verifyAuth0AccessToken(env: Auth0JwtBindings, token: strin
  * Hono middleware: verifies Auth0 access tokens via JWKS. Requires `AUTH0_DOMAIN` and `AUTH0_AUDIENCE`.
  * Accepts `Authorization: Bearer <token>` or query `access_token` (e.g. WebSocket upgrade).
  */
-export const requireAuth0Jwt = createMiddleware<{ Bindings: Env }>(async (c, next) => {
+export const requireAuth0Jwt = factory.createMiddleware(async (c, next) => {
   const domainRaw = c.env.AUTH0_DOMAIN?.trim();
   const audience = c.env.AUTH0_AUDIENCE?.trim();
   if (!domainRaw || !audience) {
