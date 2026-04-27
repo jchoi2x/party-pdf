@@ -8,7 +8,14 @@ declare namespace Cloudflare {
 	}
 	interface Env {
 		party_pdf_db: D1Database;
-		SPARKPOT_API_KEY: string;
+		/** SparkPost API key (Transmissions API). */
+		SPARKPOST_API_KEY: string;
+		/**
+		 * Optional override for SparkPost transmissions endpoint.
+		 * Default `https://api.sparkpost.com/api/v1/transmissions`.
+		 * EU: `https://api.eu.sparkpost.com/api/v1/transmissions`
+		 */
+		SPARKPOST_TRANSMISSIONS_URL: string;
 		AG_GRID_LICENSE_KEY: string;
 		SENTRY_DSN: string;
 		S3_ACCESS_KEY_ID: string;
@@ -24,6 +31,15 @@ declare namespace Cloudflare {
 		AUTH0_AUDIENCE: string;
 		AUTH0_MANAGEMENT_CLIENT_ID: string;
 		AUTH0_MANAGEMENT_CLIENT_SECRET: string;
+		/**
+		 * Auth0 database connection name for invited users (Management API create user).
+		 * Default `Username-Password-Authentication` when empty.
+		 */
+		AUTH0_DATABASE_CONNECTION: string;
+		/** Public origin for links in emails (e.g. https://app.example.com). Falls back to request origin when empty. */
+		APP_PUBLIC_URL: string;
+		/** From address for SparkPost (verified sending domain), e.g. `noreply@example.com` or `"Party PDF" <noreply@example.com>`. */
+		EMAIL_FROM: string;
 		E2E_LOGIN_EMAIL: string;
 		E2E_LOGIN_PASSWORD: string;
 		ROOM: DurableObjectNamespace<import("./src/server/index").Room>;
@@ -34,7 +50,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "SPARKPOT_API_KEY" | "AG_GRID_LICENSE_KEY" | "SENTRY_DSN" | "S3_ACCESS_KEY_ID" | "S3_SECRET_ACCESS_KEY" | "S3_URL" | "S3_PUBLIC_URL" | "S3_BUCKET" | "LIVEKIT_URL" | "LIVEKIT_API_KEY" | "LIVEKIT_API_SECRET" | "AUTH0_CLIENT_ID" | "AUTH0_DOMAIN" | "AUTH0_AUDIENCE" | "AUTH0_MANAGEMENT_CLIENT_ID" | "AUTH0_MANAGEMENT_CLIENT_SECRET" | "E2E_LOGIN_EMAIL" | "E2E_LOGIN_PASSWORD">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "SPARKPOST_API_KEY" | "SPARKPOST_TRANSMISSIONS_URL" | "AG_GRID_LICENSE_KEY" | "SENTRY_DSN" | "S3_ACCESS_KEY_ID" | "S3_SECRET_ACCESS_KEY" | "S3_URL" | "S3_PUBLIC_URL" | "S3_BUCKET" | "LIVEKIT_URL" | "LIVEKIT_API_KEY" | "LIVEKIT_API_SECRET" | "AUTH0_CLIENT_ID" | "AUTH0_DOMAIN" | "AUTH0_AUDIENCE" | "AUTH0_MANAGEMENT_CLIENT_ID" | "AUTH0_MANAGEMENT_CLIENT_SECRET" | "AUTH0_DATABASE_CONNECTION" | "APP_PUBLIC_URL" | "EMAIL_FROM" | "E2E_LOGIN_EMAIL" | "E2E_LOGIN_PASSWORD">> {}
 }
 
 // Begin runtime types

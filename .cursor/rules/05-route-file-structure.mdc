@@ -1,0 +1,53 @@
+---
+description: Enforce endpoint-per-directory route file structure in server routes
+globs: src/server/lib/routes/**/*.ts
+alwaysApply: true
+---
+
+# Route File Structure Rule
+
+Use this rule whenever creating or restructuring routes under `src/server/lib/routes`.
+
+## Required route contract
+
+Each endpoint must live in its own directory and include:
+
+- `<endpoint-name>.route.ts`
+- `<endpoint-name>.config.ts`
+- `<endpoint-name>.handler.ts`
+- `index.ts`
+- `schemas/` directory with `index.ts` and relevant `*.schema.ts` files
+
+## Group-level contract
+
+Each route group directory (for example `files`, `health`, `me`, `video`) must have:
+
+- `index.ts` that composes child routers and optional group middleware
+- No endpoint business logic in group-level `index.ts`
+
+## Endpoint-level contract
+
+Inside each endpoint directory:
+
+- Exactly one route registration file (`<endpoint>.route.ts`)
+- Route file only wires `config + handler` via `router.openapi(...)`
+- Config file defines the OpenAPI route contract (`createRoute`)
+- Handler file contains runtime behavior (`RouteHandler`)
+- `schemas/index.ts` only re-exports schema/type symbols
+
+## Naming constraints
+
+- Endpoint directory names are kebab-case and intent-based (`get-token`, `docs-by-session-id`, `patch-profile`)
+- Schema files must be singular and explicit:
+  - `body.schema.ts`
+  - `query.schema.ts`
+  - `params.schema.ts`
+  - `response.schema.ts`
+  - `error.schema.ts`
+- Never use plural schema filenames such as `*.schemas.ts`
+
+## Barrel file rules
+
+- Endpoint `index.ts` re-exports only endpoint-local files (`route`, `config`, `handler`, `schemas`)
+- Group `index.ts` composes endpoint routers using `route('', childRouter)` (or explicit prefix where required)
+- Root `src/server/lib/routes/index.ts` mounts only route groups

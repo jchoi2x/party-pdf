@@ -5,6 +5,7 @@ import { AppShell } from '@/components/logical-units/AppShell';
 const DashboardPage = lazy(() => import('@/pages/dashboard'));
 const DocumentPage = lazy(() => import('@/pages/document'));
 const Home = lazy(() => import('@/pages/home'));
+const JoinSessionPage = lazy(() => import('@/pages/join'));
 const NotFound = lazy(() => import('@/pages/not-found'));
 const ProfilePage = lazy(() => import('@/pages/profile'));
 
@@ -22,6 +23,7 @@ export default function Router() {
       <Suspense fallback={<RouteFallback />}>
         <Switch>
           <Route path='/' component={Home} />
+          <Route path='/join' component={JoinSessionPage} />
           <Route path='/profile' component={ProfilePage} />
           <Route path='/dashboard' component={DashboardPage} />
           <Route path='/document/:id' component={DocumentPage} />

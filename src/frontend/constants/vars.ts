@@ -14,5 +14,7 @@ export const variables = {
   auth0ClientId: import.meta.env.AUTH0_CLIENT_ID,
   auth0Audience: import.meta.env.AUTH0_AUDIENCE,
 };
+
+// biome-ignore lint/suspicious/noExplicitAny: for debugging
 (window as any).variables = variables;
 export const vars = variables;

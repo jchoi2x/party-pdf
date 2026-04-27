@@ -73,7 +73,7 @@ export function useWebViewer({
         let sessionDocs: SessionDocumentsResponse['data'] = [];
 
         try {
-          const res = await apiFetch(`${variables.apiBase}/docs/by-session-id/${id}`);
+          const res = await apiFetch(`${variables.apiBase}/sessions/${id}/documents`);
           if (!res.ok) throw new Error('Failed to fetch session documents');
           const data = (await res.json()) as SessionDocumentsResponse;
           sessionDocs = data.data ?? [];

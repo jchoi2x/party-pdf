@@ -1,0 +1,76 @@
+---
+description: Enforce thin route handlers and service-layer business logic
+globs: src/server/lib/routes/**/*.ts
+alwaysApply: true
+---
+
+# Handler-Service Boundary Rule
+
+Use this rule whenever implementing or modifying route handlers.
+
+## Handler responsibilities (allowed)
+
+Handlers may:
+
+- read validated request inputs (`c.req.valid(...)`)
+- read auth/context (`jwtPayload`, bindings, request metadata)
+- call service methods
+- map service results/errors to HTTP response shape/status
+
+### Valid
+
+```ts
+export const patchProfileHandler: RouteHandler<...> = async (c) => {
+  const input = c.req.valid('json');
+  const userId = c.get('jwtPayload').sub;
+  const result = await profileService.updateProfile(c.env, userId, input);
+  return c.json(result, 200);
+};
+```
+
+## Handler responsibilities (disallowed)
+
+Handlers must not:
+
+- contain business workflows beyond trivial orchestration
+- call third-party SDKs directly (Auth0, email providers, LiveKit, etc.)
+- duplicate logic that belongs in domain services
+- embed repository/DB query logic directly
+
+### Invalid
+
+```ts
+export const patchProfileHandler = async (c) => {
+  const mgmt = new ManagementClient(...); // provider SDK in handler
+  const db = drizzle(c.env.DB); // DB logic in handler
+  // business logic and external calls mixed here
+};
+```
+
+## Service boundary
+
+Business logic and provider integration must live in:
+
+- `src/server/lib/services/**`
+
+Services should:
+
+- expose typed input/output contracts
+- expose typed domain errors (or discriminated result types)
+- avoid leaking provider-specific raw errors to handlers
+
+### Valid
+
+```ts
+export type UpdateProfileResult =
+  | { ok: true; givenName: string; familyName: string }
+  | { ok: false; code: 'NOT_FOUND' | 'UPSTREAM_ERROR'; message: string };
+```
+
+### Invalid
+
+```ts
+export async function updateProfile(...) {
+  // throws provider-native error objects directly to route handlers
+}
+```

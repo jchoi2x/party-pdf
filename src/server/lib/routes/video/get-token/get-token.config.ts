@@ -1,7 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 
-import { GetTokenErrorSchema } from './schemas/errors.schemas';
-import { GetTokenRequestBodySchema, GetTokenResponseBodySchema } from './schemas/get-token.schemas';
+import { GetTokenErrorSchema, GetTokenRequestBodySchema, GetTokenResponseBodySchema } from './schemas';
 
 export const getTokenConfig = createRoute({
   method: 'post',

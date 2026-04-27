@@ -76,6 +76,7 @@ export function setupYjsCollaboration({
   Core,
 }: TSetupYjsCollaborationParams) {
   const ydoc = new Y.Doc();
+  // biome-ignore lint/suspicious/noExplicitAny: for debugging
   (window as any).ydoc = ydoc;
 
   const provider = new YProvider(PARTY_HOST, roomId, ydoc, {
@@ -84,8 +85,8 @@ export function setupYjsCollaboration({
     ...(getPartyParams ? { params: getPartyParams } : {}),
   });
   let isSyncing = false;
-  // (window as any).provider = provider;
 
+  // biome-ignore lint/suspicious/noExplicitAny: for debugging
   providerRef.current = (window as any).provider = provider;
   const documentsMap = ydoc.getMap<Y.Map<string>>('documents');
   const widgetDocumentsMap = ydoc.getMap<Y.Map<string>>('widget-documents');

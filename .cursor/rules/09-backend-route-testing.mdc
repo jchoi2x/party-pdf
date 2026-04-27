@@ -1,0 +1,68 @@
+---
+description: Enforce minimum backend test coverage for route changes
+globs: src/server/lib/routes/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Backend Route Testing Rule
+
+Apply this rule when adding or changing endpoints, handlers, configs, or route-group wiring.
+
+## Minimum endpoint tests
+
+For each changed endpoint, add/update tests covering:
+
+1. success path
+2. input validation failure path
+3. auth/permission failure path (if auth-protected)
+4. primary upstream/service failure path
+
+### Valid
+
+- `POST /docs/sessions/:session_id/invites` test suite includes:
+  - `returns 200 on success`
+  - `returns 400 for invalid body`
+  - `returns 401 when jwt missing/invalid`
+  - `returns 502 when email provider fails`
+
+### Invalid
+
+- only one happy-path test
+- tests assert only `response.ok === true` without status/body contract checks
+
+## Minimum route-group tests
+
+For each changed route group, include at least one test for:
+
+- router mount correctness
+- middleware wiring behavior for the group
+
+### Valid
+
+- test confirms `filesRouter` applies route-group middleware before endpoint handlers
+- test confirms route path registration is reachable at expected URL
+
+### Invalid
+
+- no test for route-group wiring after changing `index.ts` mounts
+
+## Contract alignment
+
+Tests must reflect:
+
+- config schema expectations (request/response shape)
+- handler-to-service boundary behavior
+- expected HTTP status + payload contracts
+
+### Valid
+
+```ts
+expect(res.status).toBe(400);
+expect(await res.json()).toMatchObject({ error: expect.any(String) });
+```
+
+### Invalid
+
+```ts
+expect(res.status).toBeLessThan(500); // too weak
+```

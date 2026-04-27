@@ -61,6 +61,11 @@
       "migrations_dir": "drizzle"
     }
   ],
+  "vars": {
+    "APP_PUBLIC_URL": "",
+    "AUTH0_DATABASE_CONNECTION": ""
+  },
   // Bearer access tokens are verified with JWKS (see require-auth0-jwt). No AUTH0_CLIENT_SECRET on the Worker for that flow.
-  // Profile PATCH uses Auth0 Management API — set AUTH0_MANAGEMENT_CLIENT_ID / AUTH0_MANAGEMENT_CLIENT_SECRET in secrets or .dev.vars (M2M app with update:users)
+  // Profile PATCH + invites: M2M needs update:users, read:users, create:user_tickets. Set AUTH0_CLIENT_ID on the Worker (same SPA client_id as the frontend) for /dbconnections/signup; that application must allow database sign-ups and have Username-Password-Authentication enabled.
+  // Session invites: set SPARKPOST_API_KEY + EMAIL_FROM in secrets or .dev.vars; optional SPARKPOST_TRANSMISSIONS_URL (EU host), APP_PUBLIC_URL for email links.
 }

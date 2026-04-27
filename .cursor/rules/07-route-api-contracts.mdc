@@ -1,0 +1,106 @@
+---
+description: Enforce backend route API contract naming and schema conventions
+globs: src/server/lib/routes/**/*.ts
+alwaysApply: true
+---
+
+# Route API Contracts Rule
+
+Apply this rule whenever creating or editing backend routes under `src/server/lib/routes`.
+
+## Endpoint directory contract
+
+Each endpoint directory must include:
+
+- `<endpoint-name>.route.ts`
+- `<endpoint-name>.config.ts`
+- `<endpoint-name>.handler.ts`
+- `index.ts`
+- `schemas/index.ts` and explicit `*.schema.ts` files as needed
+
+### Valid
+
+- `src/server/lib/routes/video/get-token/get-token.config.ts`
+- `src/server/lib/routes/video/get-token/get-token.handler.ts`
+- `src/server/lib/routes/video/get-token/get-token.route.ts`
+- `src/server/lib/routes/video/get-token/schemas/body.schema.ts`
+- `src/server/lib/routes/video/get-token/schemas/response.schema.ts`
+
+### Invalid
+
+- `src/server/lib/routes/video/get-token/config.ts` (missing endpoint prefix)
+- `src/server/lib/routes/video/get-token/handler.ts` (missing endpoint prefix)
+- `src/server/lib/routes/video/get-token/schemas/get-token.schemas.ts` (plural schema filename)
+
+## Symbol naming contract
+
+For endpoint directory `<endpoint-name>` (kebab-case):
+
+- export `<endpointName>Config` from config file
+- export `<endpointName>Handler` from handler file
+- export `<endpointName>Router` from route file
+
+### Valid
+
+```ts
+export const getTokenConfig = createRoute(...);
+export const getTokenHandler: RouteHandler<...> = async (c) => { ... };
+export const getTokenRouter = new OpenAPIHono<{ Bindings: Env }>();
+```
+
+### Invalid
+
+```ts
+export const config = createRoute(...);
+export const handler = async (c) => { ... };
+export const router = new OpenAPIHono();
+```
+
+## Schema naming contract
+
+Use singular schema filenames only:
+
+- `body.schema.ts`
+- `query.schema.ts`
+- `params.schema.ts`
+- `response.schema.ts`
+- `error.schema.ts`
+
+Never create:
+
+- `*.schemas.ts`
+
+### Valid
+
+- `schemas/body.schema.ts`
+- `schemas/error.schema.ts`
+
+### Invalid
+
+- `schemas/body.schemas.ts`
+- `schemas/errors.schemas.ts`
+
+## Schema coverage expectations
+
+For every endpoint:
+
+- define explicit success response schema
+- define explicit error schema if endpoint documents error responses
+- keep `schemas/index.ts` as re-export-only barrel
+
+### Valid
+
+```ts
+// schemas/index.ts
+export { MyBodySchema, type MyBody } from './body.schema';
+export { MyResponseSchema, type MyResponse } from './response.schema';
+export { MyErrorSchema, type MyError } from './error.schema';
+```
+
+### Invalid
+
+```ts
+// schemas/index.ts
+import { z } from '@hono/zod-openapi';
+export const InlineSchema = z.object({ ... }); // not allowed in barrel
+```

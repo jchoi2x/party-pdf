@@ -4,9 +4,7 @@ import { index, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const sessions = sqliteTable(
   'sessions',
   {
-    id: text('id')
-      .primaryKey()
-      .default(sql`(lower(hex(randomblob(16))))`),
+    id: text('id').primaryKey().default(sql`(lower(hex(randomblob(16))))`),
     ownerId: text('owner_id').notNull(),
     createdAt: text('created_at').notNull(),
   },
@@ -19,9 +17,7 @@ export const sessions = sqliteTable(
 export const participants = sqliteTable(
   'participants',
   {
-    id: text('id')
-      .primaryKey()
-      .default(sql`(lower(hex(randomblob(16))))`),
+    id: text('id').primaryKey().default(sql`(lower(hex(randomblob(16))))`),
     sessionId: text('session_id')
       .notNull()
       .references(() => sessions.id, { onDelete: 'cascade' }),
@@ -39,12 +35,10 @@ export const participants = sqliteTable(
 export const documents = sqliteTable(
   'documents',
   {
-    id: text('id')
-      .primaryKey()
-      .default(sql`(lower(hex(randomblob(16))))`),
+    id: text('id').primaryKey().default(sql`(lower(hex(randomblob(16))))`),
     ownerId: text('owner_id').notNull(),
     sessionId: text('session_id')
-      .notNull()
+      .$type<string | null>()
       .references(() => sessions.id, { onDelete: 'cascade' }),
     filename: text('filename').notNull(),
     url: text('url').notNull(),

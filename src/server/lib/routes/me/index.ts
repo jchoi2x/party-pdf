@@ -1,6 +1,12 @@
-export { meConfig } from './me.config';
-export { meHandler } from './me.handler';
-export { meRouter } from './me.route';
-export { patchMeProfileConfig } from './patch-me-profile.config';
-export { patchMeProfileHandler } from './patch-me-profile.handler';
-export * from './schemas';
+import { OpenAPIHono } from '@hono/zod-openapi';
+
+import { getMeRouter } from './get-me/get-me.route';
+import { patchProfileRouter } from './patch-profile/patch-profile.route';
+
+export const meRouter = new OpenAPIHono<{ Bindings: Env }>();
+
+meRouter.route('', getMeRouter);
+meRouter.route('', patchProfileRouter);
+
+export * from './get-me';
+export * from './patch-profile';

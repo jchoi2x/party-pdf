@@ -2,7 +2,7 @@ import { createFactory } from 'hono/factory';
 import type { JWTPayload } from 'jose';
 import * as jose from 'jose';
 
-const factory = createFactory<{ Bindings: Env; Variables: { jwtPayload: JWTPayload; }; }>();
+const factory = createFactory<{ Bindings: Env; Variables: { jwtPayload: JWTPayload } }>();
 
 const jwksByDomain = new Map<string, ReturnType<typeof jose.createRemoteJWKSet>>();
 

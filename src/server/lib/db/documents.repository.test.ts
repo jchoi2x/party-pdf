@@ -59,7 +59,10 @@ describe('createDocumentsRepository', () => {
     const returning = vi.fn().mockResolvedValue([{ id: 'session-1' }]);
     const firstValues = vi.fn(() => ({ returning }));
     const secondValues = vi.fn().mockResolvedValue(undefined);
-    const insert = vi.fn().mockImplementationOnce(() => ({ values: firstValues })).mockImplementationOnce(() => ({ values: secondValues }));
+    const insert = vi
+      .fn()
+      .mockImplementationOnce(() => ({ values: firstValues }))
+      .mockImplementationOnce(() => ({ values: secondValues }));
     getDbMock.mockReturnValue({
       insert,
     } as unknown as ReturnType<typeof getDb>);
@@ -120,5 +123,63 @@ describe('createDocumentsRepository', () => {
     expect(page.data).toHaveLength(1);
     expect(dataLimit).toHaveBeenCalledWith(5);
     expect(dataOffset).toHaveBeenCalledWith(5);
+  });
+
+  it('returns session row when owner matches', async () => {
+    const limit = vi.fn().mockResolvedValue([{ id: 'session-1' }]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    getDbMock.mockReturnValue({
+      select,
+    } as unknown as ReturnType<typeof getDb>);
+
+    const repo = createDocumentsRepository(env);
+    const row = await repo.getSessionIfOwnedBy('session-1', 'auth0|1');
+
+    expect(row).toEqual({ id: 'session-1' });
+    expect(select).toHaveBeenCalled();
+  });
+
+  it('inserts member participant with conflict ignore', async () => {
+    const onConflictDoNothing = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn(() => ({ onConflictDoNothing }));
+    const insert = vi.fn(() => ({ values }));
+    getDbMock.mockReturnValue({
+      insert,
+    } as unknown as ReturnType<typeof getDb>);
+
+    const repo = createDocumentsRepository(env);
+    await repo.addParticipantMember('session-1', 'auth0|guest');
+
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 'session-1',
+        userId: 'auth0|guest',
+        role: 'member',
+      }),
+    );
+    expect(onConflictDoNothing).toHaveBeenCalled();
+  });
+
+  it('attaches documents to session by ids', async () => {
+    const returning = vi.fn().mockResolvedValue([{ id: 'doc-1' }, { id: 'doc-2' }]);
+    const where = vi.fn(() => ({ returning }));
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
+    getDbMock.mockReturnValue({
+      update,
+    } as unknown as ReturnType<typeof getDb>);
+
+    const repo = createDocumentsRepository(env);
+    const result = await repo.attachDocumentsToSession('auth0|1', 'session-1', ['doc-1', 'doc-2', 'doc-3']);
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith({ sessionId: 'session-1' });
+    expect(result).toEqual({
+      attachedCount: 2,
+      attachedIds: ['doc-1', 'doc-2'],
+    });
   });
 });

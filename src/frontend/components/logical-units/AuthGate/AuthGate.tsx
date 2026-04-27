@@ -27,7 +27,13 @@ export default function AuthGate({ children }: AuthGateProps) {
       return;
     }
 
+    const params = new URLSearchParams(window.location.search);
+    const screenHint = params.get('screen_hint');
+
     void loginWithRedirect({
+      authorizationParams: {
+        ...(screenHint === 'signup' ? { screen_hint: 'signup' } : {}),
+      },
       appState: {
         returnTo: `${window.location.pathname}${window.location.search}${window.location.hash}`,
       },

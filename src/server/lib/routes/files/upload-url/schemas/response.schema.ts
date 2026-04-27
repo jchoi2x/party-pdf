@@ -11,7 +11,6 @@ export const UploadUrlResponseSchema = z.object({
       }),
     )
     .describe('Pre-signed upload URLs for each requested file'),
-  id: z.string().describe('Packet id for the uploaded files batch'),
 });
 
 export type UploadUrlResponse = z.infer<typeof UploadUrlResponseSchema>;

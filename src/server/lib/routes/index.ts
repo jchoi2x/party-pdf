@@ -5,6 +5,7 @@ import { requireAuth0Jwt } from '../middleware/auth';
 import { filesRouter } from './files';
 import { healthRouter } from './health';
 import { meRouter } from './me';
+import { sessionsRouter } from './sessions';
 import { videosRouter } from './video';
 
 export const apiApp = new OpenAPIHono<{ Bindings: Env }>();
@@ -40,4 +41,5 @@ apiApp.use(requireAuth0Jwt);
 apiApp.route('', healthRouter);
 apiApp.route('', meRouter);
 apiApp.route('', filesRouter);
+apiApp.route('', sessionsRouter);
 apiApp.route('/videos', videosRouter);

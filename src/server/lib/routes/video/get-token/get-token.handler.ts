@@ -1,16 +1,16 @@
 import type { RouteHandler } from '@hono/zod-openapi';
-import { AccessToken } from 'livekit-server-sdk';
+import { createVideoToken } from '../../../services/video-token.service';
 
 import type { GetTokenConfig } from './get-token.config';
 
 export const getTokenHandler: RouteHandler<GetTokenConfig, { Bindings: Env }> = async (c) => {
   const { roomName, participantName } = c.req.valid('json');
 
-  const at = new AccessToken(c.env.LIVEKIT_API_KEY, c.env.LIVEKIT_API_SECRET, {
-    identity: participantName,
-  });
-
-  at.addGrant({ roomJoin: true, room: roomName });
-  const token = await at.toJwt();
-  return c.json({ token, roomName, url: c.env.LIVEKIT_URL }, 200);
+  try {
+    const result = await createVideoToken(c.env, { roomName, participantName });
+    return c.json(result, 200);
+  } catch (err) {
+    console.warn('getTokenHandler:', err);
+    return c.json({ error: 'token_generation_failed', message: 'Failed to generate video token.' }, 400);
+  }
 };

@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 
-import type { NewDocument } from '../../../db/schema';
-import { initS3Client } from '../../../utils/s3';
+import { createUploadUrls } from '../../../services/upload-url.service';
 
 type Ctx = Context<
   { Bindings: Env },
@@ -13,8 +12,8 @@ type Ctx = Context<
 >;
 
 export const uploadUrlHandler = async (c: Ctx) => {
-  const jwtPayload = c.get('jwtPayload');
-  const ownerId = jwtPayload.sub;
+  const jwtPayload = c.get('jwtPayload') as { sub?: string } | undefined;
+  const ownerId = jwtPayload?.sub;
   if (!ownerId) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -22,31 +21,6 @@ export const uploadUrlHandler = async (c: Ctx) => {
   const filenames = c.req.queries('filenames') ?? [];
   const contentType = c.req.query('contentType') ?? 'application/pdf';
   const documentsRepository = c.get('documentsRepository');
-  const sessionId = await documentsRepository.createSessionWithLeader(ownerId);
-  const { generateUploadUrl } = initS3Client();
-
-  const data = await Promise.all(
-    filenames.map((filename) => {
-      const prefix = `${ownerId}/${sessionId}`;
-      return generateUploadUrl({
-        prefix,
-        contentType,
-        name: filename,
-      });
-    }),
-  );
-
-  const rows: NewDocument[] = data.map((doc) => ({
-    ownerId,
-    sessionId,
-    filename: doc.filename,
-    url: doc.url,
-    downloadUrl: doc.downloadUrl,
-    bucketPath: doc.bucketPath,
-    createdAt: Date.now().toString(),
-    status: 'pending',
-  }));
-  await documentsRepository.createMany(rows);
-
-  return c.json({ data, id: sessionId }, 200);
+  const result = await createUploadUrls(documentsRepository, { ownerId, filenames, contentType });
+  return c.json(result, 200);
 };

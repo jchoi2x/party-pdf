@@ -1,13 +1,22 @@
 import type { HttpClient } from '@/services/http.client';
 
 interface UploadUrlResponse {
-  id: string;
   data: Array<{
     id: string;
     filename: string;
     url: string;
     bucketPath: string;
   }>;
+}
+
+interface CreateSessionResponse {
+  id: string;
+}
+
+interface AttachDocumentsResponse {
+  sessionId: string;
+  attachedCount: number;
+  attachedIds: string[];
 }
 
 export type TUploadFileArgs = {
@@ -66,6 +75,27 @@ export class DocumentUploadService {
     return result.data;
   }
 
+  async createSession(): Promise<string> {
+    const result = await this.http.post<CreateSessionResponse, { error?: string }>('/api/sessions');
+    if (!result.ok || typeof result.data === 'string') {
+      throw new Error('Failed to create session');
+    }
+    return result.data.id;
+  }
+
+  async attachDocumentsToSession(sessionId: string, documentIds: string[]): Promise<AttachDocumentsResponse> {
+    const result = await this.http.post<AttachDocumentsResponse, { error?: string }>(
+      `/api/sessions/${sessionId}/documents`,
+      {
+        body: JSON.stringify({ documentIds }),
+      },
+    );
+    if (!result.ok || typeof result.data === 'string') {
+      throw new Error('Failed to attach documents to session');
+    }
+    return result.data;
+  }
+
   async uploadFile(args: TUploadFileArgs): Promise<void> {
     const { url, file, onProgress } = args;
     return new Promise((resolve, reject) => {
@@ -96,7 +126,7 @@ export class DocumentUploadService {
 
   async executeUploadFlow(args: TExecuteUploadFlowArgs): Promise<UploadFlowResult> {
     const { filename, contentType, file, onProgress } = args;
-    const { data, id: sessionId } = await this.getUploadUrl({ filenames: [filename], contentType });
+    const { data } = await this.getUploadUrl({ filenames: [filename], contentType });
     const fileUpload = data.find((item) => item.filename === filename) ?? data[0];
 
     if (!fileUpload) {
@@ -104,6 +134,11 @@ export class DocumentUploadService {
     }
 
     await this.uploadFile({ url: fileUpload.url, file, onProgress });
+    const sessionId = await this.createSession();
+    await this.attachDocumentsToSession(
+      sessionId,
+      data.map((item) => item.id),
+    );
     return {
       sessionId,
       documentIds: data.map((item) => item.id),
@@ -112,7 +147,7 @@ export class DocumentUploadService {
 
   async executeBatchUploadFlow(args: TExecuteBatchUploadFlowArgs): Promise<UploadFlowResult> {
     const { files, contentType, concurrency = 4, onFileProgress, onFileStatusChange } = args;
-    const { data, id: sessionId } = await this.getUploadUrl({
+    const { data } = await this.getUploadUrl({
       filenames: files.map((item) => item.filename),
       contentType,
     });
@@ -171,6 +206,12 @@ export class DocumentUploadService {
     if (failedUploads.length > 0) {
       throw new Error(`Failed to upload ${failedUploads.length} file(s)`);
     }
+
+    const sessionId = await this.createSession();
+    await this.attachDocumentsToSession(
+      sessionId,
+      data.map((item) => item.id),
+    );
 
     return {
       sessionId,
