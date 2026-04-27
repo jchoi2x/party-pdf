@@ -8,7 +8,8 @@
     "**/.replit": true,
     "**/node_modules": true,
     "**/dist": true,
-    "**/.wrangler": true
+    "**/.wrangler": true,
+    "playwright-report": true,
   },
   "typescript.experimental.useTsgo": true,
   "json.schemaDownload.enable": true,

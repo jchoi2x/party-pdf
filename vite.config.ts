@@ -32,6 +32,7 @@ if (!basePath) {
     "BASE_PATH environment variable is required but was not provided.",
   );
 }
+const isPlaywrightE2E = process.env.PLAYWRIGHT_E2E === "1";
 
 export default defineConfig({
   base: basePath,
@@ -43,7 +44,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     cloudflare(),
-    runtimeErrorOverlay(),
+    ...(isPlaywrightE2E ? [] : [runtimeErrorOverlay()]),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

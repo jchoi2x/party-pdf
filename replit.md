@@ -15,6 +15,7 @@ pnpm workspace monorepo using TypeScript. Contains a collaborative PDF document 
 ## Applications
 
 ### PDF Collaboration Platform (`artifacts/pdf-collab`)
+
 - **URL**: `/` (root)
 - **Port**: 23260
 - **Stack**: React 19 + Vite + Tailwind CSS v4 + shadcn/ui
@@ -27,6 +28,7 @@ pnpm workspace monorepo using TypeScript. Contains a collaborative PDF document 
   - Deep navy blue + warm amber design theme (Space Grotesk + Inter fonts)
 
 ### Y.js Collaboration Server (External — Cloudflare Workers)
+
 - **Host**: `oblockparty.xvzf.workers.dev`
 - **Stack**: Cloudflare Workers + `y-partyserver`
 - **Purpose**: Provides WebSocket-based Y.js document sync for multi-user annotation collaboration
@@ -84,4 +86,5 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 ## Packages
 
 ### `scripts` (`@workspace/scripts`)
+
 Utility scripts package.
